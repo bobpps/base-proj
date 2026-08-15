@@ -45,8 +45,8 @@ while looking authoritative.
 } | sort -u > /tmp/lessons-candidates
 
 while read -r f; do
-  echo "$(git log -1 --format=%ad --date=short -- "$f") $f"
-done < /tmp/lessons-candidates | sort -r > /tmp/lessons-ordered
+  echo "$(git log -1 --format=%ct -- "$f") $f"
+done < /tmp/lessons-candidates | sort -rn > /tmp/lessons-ordered
 head -n "$N" /tmp/lessons-ordered            # selected
 tail -n +"$((N+1))" /tmp/lessons-ordered     # cut — name these at the gate
 ```
@@ -55,6 +55,14 @@ Fresh reports plus partially consumed ones. A fully consumed report is never rea
 
 **Order by commit date, not by task id and not by mtime.** Task ids are not chronological, and
 mtime lies because a report is duplicated into every worktree that ever held the branch.
+
+**Use the full committer timestamp — `%ct`, epoch seconds — rather than a calendar date.** Several
+runs finishing on one day is the normal case, not an edge case, and it is exactly the case where a
+`--limit` bites: with a date-only key every report from that day ties, the sort falls through to
+comparing paths, and an older report gets selected while a newer one from the same day lands in the
+cut. The ordering would then contradict the sentence above it while looking correct. Epoch seconds
+also avoid the trap in a formatted timestamp, where two commits made in different timezones sort by
+their text rather than by their moment.
 
 **Say what the limit cut.** A report that falls off the bottom is invisible otherwise, and the
 oldest reports are where the rare formats live. Name them at the gate so the human can raise

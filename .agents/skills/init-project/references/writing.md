@@ -101,6 +101,23 @@ table, so nothing about its shape suggests it holds an inventory.
 too, not only deleting `.claude/skills/qa-architect/` and its `CLAUDE.md` row. `scripts/skills.test.sh`
 checks the table against the disk; it cannot check a sentence, which is why this is written down.
 
+### Removing a skill means removing every copy of it
+
+State it as one rule rather than per contour, because the next contour that removes a skill will not
+be the QA one:
+
+> A contour that removes a skill removes **its source directory, its generated copy under
+> `.agents/skills/`, its row in `CLAUDE.md`, and its name from the `AGENTS.md` paragraph.**
+
+The generated copy is the one that gets left behind. `.agents/` exists so Codex can discover skills
+without running anything first, so a copy that survives its source stays discoverable — the feature
+is disabled everywhere a human looks and still live for one harness. `scripts/skills.test.sh`
+reports it as `qa-architect(unexpected)`, which is how this was found.
+
+**Delete that directory outright; do not regenerate the tree to achieve it.** Regeneration needs
+Node, which a project on another stack has no reason to have installed, and it would rewrite every
+other skill as a side effect of removing one.
+
 ### The template notes are deleted, not filled
 
 `AGENTS.md`, `CLAUDE.md`, and `README.md` each open with a note saying the file is still the

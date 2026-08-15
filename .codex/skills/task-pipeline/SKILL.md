@@ -138,8 +138,10 @@ Then ship it. The retrospective skill writes `tasks/<task>/retrospective.md` and
 side effects are this session's. Stage that path alone, commit, and `git push <remote> <branch>` to
 the remote phase 5 recorded. Phase 10 already published the branch, so an uncommitted report never
 leaves the worktree, and the pass that reads these reports later locates them by path and sorts
-them by commit date: without a commit it is not late, it is absent. The push is bookkeeping under
-`review-loop.md` and starts no new review round — wait for CI on the new head and report it.
+them by commit date: without a commit it is not late, it is absent. `review-loop.md` lists the
+retrospective among the commits its bookkeeping exemption covers, so this push starts no new review
+round; `docs/decisions/0002` holds the reasoning. Read the exemption there rather than judging a new
+case from here. CI still runs — wait for it on the new head and report the result.
 
 ## What must never happen
 

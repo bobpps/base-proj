@@ -166,8 +166,9 @@ repository's, restated from memory into a third file that then drifts from the t
 Offer it again when there is something to write.
 
 **The QA package is on by default and creates nothing at setup time.** `qa-architect` writes its
-documents when a feature is finished, so what the contour decides is whether the skill and its
-`CLAUDE.md` row stay. Turning it off deletes both.
+documents when a feature is finished, so what the contour decides is whether the skill stays.
+Turning it off removes more than the one directory a reader expects — `references/writing.md` has
+the operation, and `scripts/skills.test.sh` fails a repository that stops halfway through it.
 
 It has one consequence elsewhere in this interview, and it is easy to miss because it lands in a
 different block: question 1.4 offers the language of human-facing documents as covering the README
