@@ -20,15 +20,20 @@ Shared product, architecture, security, and validation instructions live in `AGE
 
 ## Which skill for which request
 
-| Request | Skill |
-| --- | --- |
-| Implement a task through to a reviewed pull request | `task-pipeline` |
-| A finished run needs its retrospective | `retrospective` |
-| Accumulated retrospectives should improve the skills | `lessons` |
-| A finished feature needs a human test plan | `qa-architect` |
-| Documentation may have drifted from the code | `docs-audit` |
-| A harsh architectural read of recent changes | `code-critic` |
-| Set up or re-configure this repository from the template | `init-project` |
+| Request | Skill | |
+| --- | --- | --- |
+| Set up or re-configure this repository from the template | `init-project` | on disk |
+| Implement a task through to a reviewed pull request | `task-pipeline` | on disk |
+| A finished run needs its retrospective | `retrospective` | **not yet built** |
+| Accumulated retrospectives should improve the skills | `lessons` | **not yet built** |
+| A finished feature needs a human test plan | `qa-architect` | **not yet built** |
+| Documentation may have drifted from the code | `docs-audit` | **not yet built** |
+| A harsh architectural read of recent changes | `code-critic` | **not yet built** |
+
+The third column is not decoration. A skill named in this table but absent from disk is worse than
+an absent skill: this table is what the next agent reads to decide what is available, and a missing
+one fails at the moment it is needed rather than at the moment it is looked up. The column goes
+away as the rows become real.
 
 The pipeline is autonomous by default: it takes the task to an open pull request and drives the
 review loop to a verdict. Human gates fire where risk requires them, not on every step. Pass

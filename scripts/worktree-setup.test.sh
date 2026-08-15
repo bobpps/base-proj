@@ -346,6 +346,13 @@ OUT="$("$SCRIPT" --repo "$D/clone" --branch main --base main --root .worktrees 2
 check "base branch refused: exit 2" "2" "$RC"
 rm -rf "$D"
 
+# --- 18. a flag whose value is missing ------------------------------------------------------------
+#
+# `shift 2` with one argument left fails, and the consequence depended only on the `set` line: this
+# script exited 1 silently, and its sibling looped forever. Neither is the documented status.
+OUT="$(timeout 10 "$SCRIPT" --branch 2>&1)"; RC=$?
+check "missing flag value: exit 2, not a hang or a silent 1" "2" "$RC"
+
 echo
 echo "  $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

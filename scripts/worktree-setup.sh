@@ -37,13 +37,21 @@ USAGE
 
 BRANCH="" BASE="" ROOT="" REMOTE="" REPO="."
 
+# A flag that takes a value proves the value is there before consuming two arguments. `shift 2`
+# with one argument left fails, and what happens then depends only on which `set` line this script
+# happens to carry: with `set -e` it exits 1 and says nothing, and without it the loop never
+# advances and the script hangs. Both were observed. Neither is the documented status 2.
+need_value() {
+  [ $# -ge 2 ] || { echo "$1 needs a value" >&2; exit 2; }
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --branch) BRANCH="${2-}"; shift 2 ;;
-    --base)   BASE="${2-}";   shift 2 ;;
-    --root)   ROOT="${2-}";   shift 2 ;;
-    --remote) REMOTE="${2-}"; shift 2 ;;
-    --repo)   REPO="${2-}";   shift 2 ;;
+    --branch) need_value "$@"; BRANCH="$2"; shift 2 ;;
+    --base)   need_value "$@"; BASE="$2";   shift 2 ;;
+    --root)   need_value "$@"; ROOT="$2";   shift 2 ;;
+    --remote) need_value "$@"; REMOTE="$2"; shift 2 ;;
+    --repo)   need_value "$@"; REPO="$2";   shift 2 ;;
     -h|--help) usage ;;
     *) echo "unknown argument: $1" >&2; usage ;;
   esac

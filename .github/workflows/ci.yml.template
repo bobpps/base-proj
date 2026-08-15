@@ -81,6 +81,23 @@ jobs:
       - name: Review snapshot
         run: bash scripts/review-snapshot.test.sh
 
+      # Guards the check that /init-project cannot reach the doctrine layer. The property is the
+      # load-bearing one in the two-layer design, so the thing that measures it has to keep working.
+      - name: Doctrine checksum
+        run: bash scripts/doctrine-checksum.test.sh
+
+      # The placeholder scan decides whether a configuration run finished. Its two known wrong
+      # answers - a GitHub expression read as a placeholder, a skill that documents one - both make
+      # the check unpassable, and an unpassable check gets satisfied by editing the wrong thing.
+      - name: Placeholder scan
+        run: bash scripts/placeholders.test.sh
+
+      # Compares the placeholders the template carries against the interview's writing map. Five
+      # review rounds each found a different value that no question produced, one at a time; two
+      # lists checked against each other close the class.
+      - name: Placeholder coverage
+        run: bash scripts/placeholder-coverage.test.sh
+
       - name: Type correctness
         run: "{{CMD_TYPECHECK}}"
 
@@ -99,6 +116,11 @@ jobs:
       # Producing an artifact and proving it runs are different claims: a bundle can
       # resolve every import at build time and die on the first process start. This
       # step starts what the build produced.
+      #
+      # /init-project deletes this step when question 2.3 says the project is a library.
+      # `AGENTS.md` records the role as "not applicable — library", which is a sentence and
+      # not a command: putting it in `run:` fails in the shell, and leaving the placeholder
+      # fails verification. There is no third option, so the step goes.
       - name: Artifact smoke
         run: "{{CMD_SMOKE}}"
 
@@ -120,5 +142,13 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The same setup the checks job gets, and for the same reason. A job that only checks out
+      # runs the integration command with no toolchain and no dependencies installed — so the one
+      # role this project decided *only CI can prove* is the one that never goes green, and the
+      # failure looks like the code rather than like the workflow.
+      - name: Set up the toolchain
+        run: "{{CI_SETUP_STEPS}}"
+
       - name: Prove what only CI can prove
         run: "{{CMD_INTEGRATION}}"
