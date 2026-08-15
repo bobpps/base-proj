@@ -27,7 +27,8 @@ usage: worktree-setup.sh --branch <name> --base <name> --root <dir> [--remote <n
   --branch  the task branch. Never the default branch.
   --base    the base branch to integrate with, e.g. main
   --root    directory the worktrees live under, from AGENTS.md, git-ignored
-  --remote  remote name. Derived from the repository when omitted.
+  --remote  the one server this run reads and writes. Required where the repository has more
+            than one remote; derived where it has exactly one.
   --repo    repository to operate on. Defaults to the current directory.
 USAGE
   exit 2
@@ -76,26 +77,23 @@ fi
 
 # --- Which remote? ----------------------------------------------------------------------------
 #
-# Read out of the authority that holds the fact, never out of a convention. `origin` is a default
-# that clone happens to write, not a statement that this repository's canonical server is origin —
-# a fork, a mirror, or a second push target all break that inference while leaving the name in
-# place. The wrong answer here poisons everything below it: the fetch, the ref the branch is
-# created from, both merges, and the push the run has not made yet.
+# **One server per run, and it is never guessed.** `--remote` — or the sole remote where there is
+# only one — names the single server this run reads and writes: it is fetched, the branch is
+# created from it, both merges come from it, and phase 10 pushes to it. Branches living on any
+# other remote are outside this run by definition, not by oversight.
+#
+# The narrowness is the point, and it was bought expensively. Four review rounds each found a new
+# place where "which server" was being inferred — from the name `origin`, from a fallback, from the
+# branch configuration, from the absence of branch configuration — and each fix was correct and
+# closed only the site it was about. Inference has no natural stopping point here, because the
+# repository does not hold the answer: a branch on `origin` and a base on `upstream` is a coherent
+# arrangement, and no rule reading the repository can tell which one this task belongs to. So the
+# procedure stops asking, and requires the answer where several are possible.
 remotes="$(git -C "$REPO" remote)"
 remote_count="$(printf '%s\n' "$remotes" | grep -c . || true)"
 remote_list="${remotes//$'\n'/, }"
 
 has_remote() { printf '%s\n' "$remotes" | grep -Fqx -- "$1"; }
-
-# git records a branch's server in `branch.<name>.remote`, which is readable without checking the
-# branch out. A value of `.` means it tracks a local branch and names no server; a value naming a
-# remote that has since been removed names no server either.
-remote_of_branch() {
-  local configured
-  configured="$(git -C "$REPO" config --get "branch.$1.remote" || true)"
-  [ -n "$configured" ] && [ "$configured" != "." ] && has_remote "$configured" || return 0
-  printf '%s' "$configured"
-}
 
 if [ -n "$REMOTE" ]; then
   has_remote "$REMOTE" || { echo "no such remote: $REMOTE. Remotes: $remote_list" >&2; exit 2; }
@@ -105,24 +103,10 @@ elif [ "$remote_count" = 0 ]; then
 elif [ "$remote_count" = 1 ]; then
   REMOTE="$remotes"
 else
-  base_remote="$(remote_of_branch "$BASE")"
-  branch_remote="$(remote_of_branch "$BRANCH")"
-
-  # A fork workflow — base tracking one server, the task branch another — is a real arrangement
-  # that this procedure's single `--remote` cannot express. Refusing is the honest answer, and it
-  # is deliberately stricter than picking either one: a silent choice here is the defect this
-  # whole block exists to remove. Where both agree, or only one is configured, the order they are
-  # read in decides nothing.
-  if [ -n "$base_remote" ] && [ -n "$branch_remote" ] && [ "$base_remote" != "$branch_remote" ]; then
-    echo "$BASE tracks $base_remote and $BRANCH tracks $branch_remote; pass --remote" >&2
-    exit 2
-  fi
-
-  REMOTE="${base_remote:-$branch_remote}"
-  [ -n "$REMOTE" ] || {
-    echo "no branch names a remote to derive from; pass --remote. Remotes: $remote_list" >&2
-    exit 2
-  }
+  echo "this repository has several remotes: $remote_list" >&2
+  echo "This procedure works with one server per run and will not choose for you." >&2
+  echo "Name it with --remote, from the Remote row in AGENTS.md." >&2
+  exit 2
 fi
 
 WT="$ROOT/$BRANCH"

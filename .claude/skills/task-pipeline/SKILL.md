@@ -204,9 +204,10 @@ After pushing in phase 10, watch CI to a verdict rather than predicting it.
 
 ## Phase 7: the review fan-out
 
-Capture `git status --porcelain` and the diff **before** launching, and compare afterwards.
-Reviewers advise; if the tree moved, an agent exceeded its role, and that needs to be known before
-those changes reach the diff.
+Capture the three signals `subagent-briefs.md` names — status, `HEAD`, and a hash of the diff —
+**before** launching, and compare all three afterwards. Reviewers advise; if the tree moved, an
+agent exceeded its role, and that needs to be known before those changes reach the diff. The status
+alone will not tell you: a reviewer editing an already-modified file leaves it byte-identical.
 
 For **Normal and Risky**, launch the passes in one message.
 `docs/engineering/subagent-briefs.md` has which specialist fits which pass and how to brief the

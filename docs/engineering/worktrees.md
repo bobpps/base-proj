@@ -98,16 +98,25 @@ deleted by whoever next finds it inconvenient.
   on overlapping paths, or succeeds and blends incoming changes into work nobody has reviewed. The
   second outcome is worse because it looks like it worked.
 
-- **The remote is read out of the authority that holds it, not out of a convention.** `origin` is a
-  name `git clone` happens to write; it is not a statement that this repository's canonical server
-  is origin, and a fork, a mirror, or a second push target all break that inference while leaving
-  the name in place. So: an explicit `--remote` if given, the only remote if there is one, otherwise
-  the server the base or task branch is configured to track. When the base and the task branch track
-  *different* servers — a fork workflow — the script refuses instead of choosing, because one
-  `--remote` cannot express two, and a silent choice there is the defect this rule removes.
+- **One server per run, named rather than inferred.** `--remote` — or the sole remote where there
+  is only one — is the single server this run reads and writes: it is fetched, the branch is
+  created from it, both merges come from it, and phase 10 pushes to it. **A branch living on any
+  other remote is outside this run by definition**, not by oversight. Where a repository has
+  several remotes and none was named, the procedure refuses.
 
-  This is the same shape as the permissions rule in `AGENTS.md`: read the fact from whatever holds
-  it, rather than from the change or the convention that suggests it.
+  That narrowness is deliberate, and it replaced an inference that cost four review rounds. Each
+  round found a new place where "which server" was being guessed — from the name `origin`, from a
+  fallback, from the branch configuration, then from the *absence* of branch configuration — and
+  each fix was correct and closed only its own site. The reason it kept recurring is that the
+  repository does not contain the answer: a task branch on `origin` with a base on `upstream` is a
+  coherent fork workflow, and no rule reading the repository can tell whether this task belongs to
+  one server or the other. An inference with no ground truth has no natural stopping point, so the
+  procedure stops inferring and asks.
+
+  The cost is real and worth stating: a project with several remotes must record the name in
+  `AGENTS.md`, and if it records the wrong one the procedure will obey it. That is a mistake a
+  human can see in one line of configuration, which is the trade — a visible wrong answer instead
+  of a silent one.
 
 ## Afterwards
 

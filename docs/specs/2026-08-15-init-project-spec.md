@@ -175,17 +175,21 @@ project cannot prove — in those words, in `AGENTS.md`.
 | --- | --- | --- | --- |
 | 3.1 | Where tasks live | choice: GitHub Issues · Linear · files in `docs/tasks/` | GitHub Issues |
 | 3.2 | Base branch | confirm a derived value | the repository's current default |
-| 3.3 | Remote | **asked only when `git remote` lists more than one** | `derived` |
+| 3.3 | Remote | **asked, and required, only when `git remote` lists more than one** | `derived` |
 | 3.4 | Branch pattern | confirm-or-edit | `{author}/{task-id}` |
 | 3.5 | Commit subject convention | confirm-or-edit | `{task-id}: <imperative subject>` |
 | 3.6 | Worktree root | confirm-or-edit | `.worktrees/` |
 
-3.3 is a question the repository usually answers for itself, which is why it is usually not asked.
-`scripts/worktree-setup.sh` derives the remote from the branch configuration and refuses rather
-than guessing when that is ambiguous, so the only project that needs to answer is one where the
-answer is genuinely ambiguous — several remotes, with the base and the task branch tracking
-different servers. Writing `derived` everywhere else keeps the false precision out: a name recorded
-by hand is a name that goes stale, and this one has a mechanism that stays current.
+3.3 is a question most repositories answer for themselves, which is why it is usually not asked.
+`scripts/worktree-setup.sh` works with one server per run: where the repository has exactly one
+remote it uses that, and where it has several it refuses until one is named. So the question is
+asked precisely when the repository cannot answer it, and the answer is then **required** — a
+project with several remotes whose Remote row says `derived` cannot set up a worktree at all.
+
+Writing `derived` everywhere else keeps false precision out: a name recorded by hand goes stale,
+and the single-remote case has a mechanism that stays current. When this question is asked, say in
+the option text what it settles — the named server is fetched, the branch is created from it,
+merged from it, and pushed to it, and branches on the other remotes are outside every run.
 
 Choosing Linear adds a note to `AGENTS.md` that the pipeline needs the Linear MCP server, and adds
 the tracker-comment etiquette: exactly two comments per run — one at the start, one at the end — and

@@ -93,8 +93,16 @@ gets pasted into the checkpoint.
 
 ## Phase 7 — the review fan-out
 
-Before launching, record `git status --porcelain` and the diff under review. Launch the passes in
-one message. Afterwards, compare `git status --porcelain` against the recording.
+Before launching, record three things: `git status --porcelain`, `git rev-parse HEAD`, and a hash
+of the diff under review — `git diff HEAD | git hash-object --stdin` will do. Launch the passes in
+one message. Afterwards, compare **all three** against the recording.
+
+The status alone does not answer the question. A reviewer that edits a file already carrying
+uncommitted changes leaves the porcelain line byte-identical — ` M path` before and ` M path`
+after — so the tree reads as untouched while its contents moved, and the change reaches the commit
+without ever being adjudicated. The diff hash catches that; `HEAD` catches a reviewer that
+committed. The recording exists to detect an agent exceeding its read-only role, and an agent that
+exceeds it is the one case where the cheapest signal is also the one that misses.
 
 **Coverage never depends on what is installed.** `checkpoints.md` requires six lenses on every
 Normal and Risky run. A specialist that happens to be installed changes *who* runs a lens and how

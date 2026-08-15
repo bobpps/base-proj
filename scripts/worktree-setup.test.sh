@@ -175,43 +175,66 @@ check "derived remote: exit 0" "0"        "$RC"
 check "derived remote: used"   "upstream" "$(field remote)"
 rm -rf "$D"
 
-# --- 11. with several remotes, the branch's configured server beats the name `origin` -----------
+# --- 11. several remotes: refuse rather than infer ----------------------------------------------
 #
-# The second remote points at the same bare repository, so the fetch behaves identically and the
-# assertion is only about which name was chosen. Preferring `origin` here would fetch the base
-# from the wrong server in a fork or a mirror, which is the whole failure this rule removes.
-D="$(new_fixture)"
-git -C "$D/clone" remote add canonical "$D/remote.git"
-git -C "$D/clone" config branch.main.remote canonical
-run "$D/clone"
-check "several remotes: exit 0"                    "0"         "$RC"
-check "several remotes: base's own server is used" "canonical" "$(field remote)"
-rm -rf "$D"
-
-# --- 12. several remotes and nothing to derive from: refuse rather than guess -------------------
+# Every branch here is configured exactly as a normal clone leaves it, so a procedure willing to
+# infer would find plenty to infer from. It must still refuse: the repository cannot say which of
+# two servers this task belongs to, and four review rounds were spent discovering that no reading
+# of it can.
 D="$(new_fixture)"
 git -C "$D/clone" remote add mirror "$D/remote.git"
-git -C "$D/clone" config --unset branch.main.remote
 run "$D/clone"
-check "nothing to derive from: exit 2" "2" "$RC"
+check "several remotes: exit 2" "2" "$RC"
+if printf '%s\n' "$OUT" | grep -q -- --remote; then
+  pass "several remotes: the message names the way out"
+else
+  fail "several remotes: the message names the way out" "no mention of --remote in [$OUT]"
+fi
 rm -rf "$D"
 
-# --- 13. base and branch tracking different servers is a fork workflow, not a default -----------
+# --- 12. several remotes with the server named: works, and uses that one ------------------------
 D="$(new_fixture)"
 git -C "$D/clone" remote add mirror "$D/remote.git"
-git -C "$D/clone" config branch.main.remote origin
-git -C "$D/clone" branch feat/x main
-git -C "$D/clone" config branch.feat/x.remote mirror
-run "$D/clone"
-check "conflicting servers: exit 2" "2" "$RC"
-run "$D/clone" --remote origin
-check "conflicting servers: an explicit --remote resolves it" "0" "$RC"
+run "$D/clone" --remote mirror
+check "named remote: exit 0"     "0"      "$RC"
+check "named remote: is the one used" "mirror" "$(field remote)"
 rm -rf "$D"
 
-# --- 14. an explicit remote that does not exist ------------------------------------------------
+# --- 13. an explicit remote that does not exist ------------------------------------------------
 D="$(new_fixture)"
 run "$D/clone" --remote nope
 check "unknown --remote: exit 2" "2" "$RC"
+rm -rf "$D"
+
+# --- 14. the round-11 blocker: the task branch lives on a remote the run was not told about -----
+#
+# The reported failure was silent: the branch was classified as absent, a fresh one of the same
+# name was created from the base, and phase 10 pushed that unrelated history. Both halves of the
+# narrowed promise are asserted here — the refusal when nothing named a server, and the defined
+# behaviour when one was named. The second is not a bug: `--remote` means the one server this run
+# reads and writes, so a branch on any other is outside the run by definition. It is pinned so
+# that nobody later reads it as an oversight and re-opens the inference this cost four rounds.
+D="$(new_fixture)"
+git init --quiet --bare "$D/fork.git"
+git -C "$D/fork.git" symbolic-ref HEAD refs/heads/main
+git -C "$D/clone" remote add fork "$D/fork.git"
+git -C "$D/seed" remote add fork "$D/fork.git"
+git -C "$D/seed" switch --quiet -c feat/x origin/main
+echo elsewhere > "$D/seed/elsewhere.txt"
+git -C "$D/seed" add -A; git -C "$D/seed" commit --quiet -m "work on the fork"
+git -C "$D/seed" push --quiet fork feat/x
+
+run "$D/clone"
+check "branch on an unnamed remote: refuses instead of creating a namesake" "2" "$RC"
+
+run "$D/clone" --remote origin
+check  "branch on another remote: exit 0"   "0"           "$RC"
+check  "branch on another remote: case"     "created-new" "$(field case)"
+if [ ! -e "$(field worktree)/elsewhere.txt" ]; then
+  pass "branch on another remote: the fork's work is not silently adopted"
+else
+  fail "branch on another remote: the fork's work is not silently adopted" "elsewhere.txt present"
+fi
 rm -rf "$D"
 
 # --- 15. a root written with a trailing slash still resumes -------------------------------------

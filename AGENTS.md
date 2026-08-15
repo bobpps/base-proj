@@ -128,10 +128,12 @@ at the required human gate.
 Commit messages are imperative and explain **why**, not just what. The first line stays short;
 detail goes in the body as a list.
 
-**Remote** is `derived` in a repository with one remote, and a name in a repository with several.
-`scripts/worktree-setup.sh` works it out from the branch configuration where it can, and refuses
-rather than guessing where it cannot — so a project that made it guess wrong once records the
-answer here, and the run passes it as `--remote`.
+**Remote** is `derived` where the repository has exactly one remote, and **the name of a server**
+where it has several. `scripts/worktree-setup.sh` works with one server per run and will not
+choose between candidates: it fetches that server, creates the branch from it, merges from it, and
+phase 10 pushes to it. Branches on other remotes are outside the run. Where several remotes exist
+and this row does not name one, the procedure refuses rather than picking — see
+`docs/engineering/worktrees.md` for why inference was removed rather than improved.
 
 ## Security and secrets
 
