@@ -43,7 +43,8 @@ fills it. The check will say so.
 | `PROJECT_CONTEXT` | `AGENTS.md` | 1.5, condensed to what an agent needs before touching code |
 | `USER_LANGUAGE` | `AGENTS.md` | 1.3 |
 | `DOC_LANGUAGE_EXCEPTIONS` | `AGENTS.md` | 1.4 — empty when documents follow 1.3 |
-| `CMD_TYPECHECK` `CMD_LINT` `CMD_FORMAT_CHECK` `CMD_TEST` `CMD_TEST_ONE` `CMD_BUILD` `CMD_SMOKE` `CMD_INTEGRATION` | `AGENTS.md`, `README.md` | 2.4, the eight roles |
+| `CMD_TYPECHECK` `CMD_LINT` `CMD_FORMAT_CHECK` `CMD_TEST` `CMD_TEST_ONE` `CMD_INTEGRATION` | `AGENTS.md`, `README.md` | 2.4, the eight roles |
+| `CMD_BUILD` `CMD_SMOKE` | `AGENTS.md`, `README.md` | 2.4, and 2.6 where the profile's default is a wrapper script with no body |
 | `CMD_FORMAT` | `README.md` | 2.4 — formatting in **write** mode, not the check |
 | `CMD_SUPPORTING` | `AGENTS.md` | 2.4 |
 | `SETUP_COMMANDS` | `README.md` | 2.4 |
@@ -59,8 +60,8 @@ fills it. The check will say so.
 | `REVIEW_REQUEST` | `AGENTS.md` | 4.2 |
 | `VALIDATION_LINE` | `AGENTS.md`, `README.md` | 6.1 |
 | `CI_INTEGRATION_JOB_NAME` | `ci.yml` | 6.1 — the job is deleted when nothing is CI-only |
-| `RISK_ADDITIONS` | `AGENTS.md` | 7 |
-| `SECURITY_ADDITIONS` | `AGENTS.md` | 7, the security half |
+| `RISK_ADDITIONS` | `AGENTS.md` | 7.1 |
+| `SECURITY_ADDITIONS` | `AGENTS.md` | 7.2 |
 | `ARCHITECTURE_BOUNDARIES` | `AGENTS.md` | 8.2 |
 | `ARCHITECTURE_INVARIANTS` | `AGENTS.md` | 8.3 |
 | `ARCHITECTURE_SUMMARY` | `README.md` | 8.2, in prose for a human reader |

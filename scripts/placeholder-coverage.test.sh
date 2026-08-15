@@ -66,6 +66,32 @@ else
   fail "every placeholder has a row in the writing map" "no question produces:$missing"
 fi
 
+# A row may name a question that does not exist, which is how `SECURITY_ADDITIONS` came to be
+# answered by "7, the security half" while block 7 held one question about risk and nothing about
+# security. The map is a promise about the interview, so check it against the interview.
+QUESTIONS="$SKILL/references/interview.md"
+absent=""
+asked=0
+for q in $(grep -oE '\| [0-9]+\.[0-9]+ \|' "$QUESTIONS" | tr -d '| ' | LC_ALL=C sort -u); do
+  asked=$((asked + 1))
+done
+for q in $(sed -n 's/^| `[A-Z_` ]*` |[^|]*| \(.*\) |$/\1/p' "$MAP" \
+           | grep -oE '[0-9]+\.[0-9]+' | LC_ALL=C sort -u); do
+  grep -qE "^\| $q \|" "$QUESTIONS" || absent="$absent $q"
+done
+
+if [ "$asked" -gt 0 ]; then
+  pass "the interview defines numbered questions ($asked)"
+else
+  fail "the interview defines numbered questions" "found none; the extraction is broken"
+fi
+
+if [ -z "$absent" ]; then
+  pass "every question the map cites exists in the interview"
+else
+  fail "every question the map cites exists in the interview" "cited but not defined:$absent"
+fi
+
 echo
 echo "  $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

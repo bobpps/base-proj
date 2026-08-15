@@ -56,6 +56,18 @@ the human discover it after answering.
 | 2.4 | The eight proving commands, plus setup, format-write, and supporting | confirm-or-edit, one screen | from the profile |
 | 2.5 | Runtime version to pin | confirm a derived value | `node --version` or `dotnet --version` on this machine |
 
+| 2.6 | What `build` and `smoke` actually run | free text, asked when 2.4 leaves a wrapper script | — |
+
+2.6 exists because some of the profile's defaults are **wrapper scripts rather than commands**.
+`npm run typecheck` has `tsc --noEmit` behind it and the profile says so; `npm run build` and
+`npm run smoke` have nothing behind them, because what they run depends on the bundler and the
+entry point, which no profile can know. Writing the manifest with a script name and no body gives
+the project two proving commands that fail on their first use, and `evidence.md` calls that the
+failure the whole doctrine exists to prevent.
+
+Ask for the bodies, or record those roles as ones this project cannot prove yet. Do not invent a
+bundler.
+
 2.5 exists because the pin is a file — `.nvmrc`, `global.json` — and CI reads it through
 `node-version-file` or `global-json-file` rather than a literal. There is nothing to derive it from
 in a fresh project: no manifest exists yet. Asking with the machine's own version pre-filled is
@@ -144,8 +156,14 @@ One multiple-choice question. Defaults come from the template's own decisions an
 | --- | --- | --- |
 | Codex edition and generated `.agents/` | **on** | every rule expressed twice, in two harness vocabularies |
 | QA package for a human tester | **unavailable** | — see below |
-| Cursor rules | off | a third copy of the same rules, which then drifts |
+| Cursor rules | **unavailable** | — see below |
 | Vendor plugin and user skills into `.agents/` | off | one machine's installed set committed to the repository, ageing unnoticed |
+
+**Cursor rules cannot be turned on either**, and for the same reason as the QA package: nothing in
+the writing map creates them, and no template exists to create them from. Enabling a contour whose
+only defined operation is deletion asks the agent to invent both the format and the rules — and the
+rules it would invent are this repository's, restated from memory into a third file that then
+drifts from the two that are real. Offer it again when there is something to write.
 
 **The QA package cannot be turned on yet.** The `qa-architect` skill that would produce it is not
 built — `CLAUDE.md` says so per row — and nothing in the writing map creates those documents. An
@@ -196,13 +214,25 @@ which is a real property of small projects and should not be dressed up as an om
 
 ---
 
-## Block 7 — This project's risk additions
+## Block 7 — This project's risk and security additions
 
-One free-text question, with the base list from `checkpoints.md` shown read-only above it.
+| # | Question | Type | Default |
+| --- | --- | --- | --- |
+| 7.1 | What else counts as Risky here | free text, base list shown read-only | none |
+| 7.2 | Security rules this project adds | free text | none |
 
-**The human adds; they cannot remove.** Removing an item from that list is a change to the
-doctrine, and an interview does not make those. If the human wants something off the list, that is
-a decision record and a change to `checkpoints.md` — say so and leave the list alone.
+**The human adds; they cannot remove.** Removing an item from either base list is a change to the
+doctrine, and an interview does not make those. If the human wants something off a list, that is a
+decision record and a change to `checkpoints.md` — say so and leave the list alone.
+
+**7.2 is its own question, not a re-reading of 7.1.** They fill different sections of `AGENTS.md`
+and they answer different things: 7.1 says which work needs a human gate, 7.2 says what must never
+happen regardless of who approved it. An answer about model changes being risky is not an answer
+about credentials, and copying one into the other writes a security rule nobody stated.
+
+**"None" is a real answer to either**, recorded as such. The base lists already carry the rules
+that hold everywhere; a project with nothing to add is a project whose additions are genuinely
+empty rather than one that was never asked.
 
 ---
 
