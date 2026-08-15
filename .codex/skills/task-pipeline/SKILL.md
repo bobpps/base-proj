@@ -48,7 +48,7 @@ rule, and the rule is the weaker mechanism — so state it, and hold to it delib
 
 | Provided there by | Replaced here by |
 | --- | --- |
-| Plan mode, which makes phases 1–4 read-only by construction | A rule: **create nothing, edit nothing, and run no command that writes, until the plan is approved.** Investigation is read-only. There is no mechanism enforcing this; it holds because it is followed. |
+| Plan mode, which makes phases 1–4 read-only by construction | A rule: **create nothing, edit nothing, and run no command that writes, until the plan is approved** — by the human where the mode requires it, by the run itself otherwise. Investigation is read-only. There is no mechanism enforcing this; it holds because it is followed. |
 | A native question mechanism at gates | The printed `Human decision required` block from `checkpoint-formats.md`. End the turn after printing it and wait. Do not answer it yourself, and do not continue on an assumption about what the answer would be. |
 | A task list showing which gate the run is stopped at | Say it in prose at the top of every message: which phase, and what is being waited on. A long run that goes quiet is indistinguishable from one that died. |
 

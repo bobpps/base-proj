@@ -117,17 +117,28 @@ that branch.
   rules out. This edition needs that reminder more than the Codex one: `AskUserQuestion` leaves
   nothing on the page, so an unrecorded decision survives only as long as the conversation.
 
-- **Phase 4** — call `ExitPlanMode` with the plan. That call is how the session leaves read-only
-  mode; what it *means* depends on the run, per phase 4 of `checkpoints.md`:
+- **Phase 4** — call `ExitPlanMode` with the plan. It is the only way out of plan mode, and in
+  this harness it always surfaces the plan for approval. **Whether that approval needs a human
+  depends on the session's permission mode, not on anything this skill says** — an interactive
+  session prompts, an auto-accepting or headless one passes through.
 
-  - **Risky, or `--interactive`** — a real gate. Wait for a human answer before the first edit.
-    For Risky this holds even when nothing looks ambiguous: the human is approving the risk, not
-    resolving a question.
-  - **Normal and Small, autonomous** — the transition out of read-only, not an open question. The
-    contract has the run approve its own plan here, and that is what makes the default autonomous.
-    Do not solicit a decision the contract does not ask for; a pipeline that stops on every
-    ordinary task is a supervised one wearing an autonomous label.
+  Do not claim otherwise. An earlier version of this file called the transition "not an open
+  question" for autonomous runs, which relabelled the mechanism instead of changing it, and a
+  relabelled mechanism behaves exactly as it did before.
+
+  What this skill does control is the plan's content and what the run does once the call returns:
+
+  - **Risky, or `--interactive`** — present the plan as a decision, with the alternatives that
+    were considered, and treat the approval as a real gate: stop until it is answered. For Risky
+    this holds even when nothing looks ambiguous, because the human is approving the risk rather
+    than resolving a question.
+  - **Normal and Small** — present the plan as a statement of what is about to happen, and
+    proceed as soon as the call returns. Do not solicit a choice the contract does not ask for:
+    per phase 4 of `checkpoints.md` the run approves its own plan in these modes.
   - **Analysis-only** — publish the plan and stop **without** exiting plan mode.
+
+  The Codex edition has no equivalent interruption, having no plan mode to leave. That is a real
+  difference between the editions and belongs in the open rather than smoothed over.
 
 Nothing is written to `tasks/<task>/` in these phases. The worktree does not exist yet, and plan
 mode is read-only.
@@ -161,8 +172,11 @@ After approval and before the first edit:
 4. Reuse an existing tree only when it lives under the configured root. When the branch exists
    without one, add a tree for it rather than switching branches in place.
 5. **Gate** when the branch is already checked out in another worktree, including the caller's.
-   Offer a different branch, ask the human to free it, or offer to run in the caller's tree after
-   they confirm it is clean and dedicated to this task.
+   Offer exactly two ways out: a different branch, or the human freeing that checkout.
+
+   Do not offer to run in the caller's ordinary checkout. It sits outside the configured root, so
+   working there breaks the isolation contract in `checkpoints.md` — and a confirmation that the
+   tree "is clean" describes one moment rather than a property of the tree.
 
 Write `plan.md` as the first act inside the tree, before the first edit, carrying what phases 2–4
 concluded.
