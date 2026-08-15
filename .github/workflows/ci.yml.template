@@ -1,0 +1,113 @@
+# Continuous integration.
+#
+# Under `docs/engineering/evidence.md` this workflow is the enforcement point for
+# everything the developer machine cannot prove. Every comment below records what a
+# line defends against — a configuration line whose reason is not written down gets
+# deleted by the first person who can see its cost and not its purpose.
+#
+# `{{PLACEHOLDER}}` values are filled in by /init-project, which also renames this
+# file to `ci.yml`.
+#
+# The `.template` suffix is why the file is inert: GitHub runs `.github/workflows/*.yml`
+# and nothing else. Named `ci.yml` in the template, this workflow runs on every pull
+# request against base-proj itself and fails on the first placeholder — observed, at
+# `Run {{CI_SETUP_STEPS}}` → `command not found`, exit 127.
+#
+# The alternative was to guard each step on whether the repository is still a template.
+# That works too, and leaves a permanent conditional in the CI of every generated
+# project — scaffolding that outlives its reason. A rename leaves nothing behind.
+name: CI
+
+on:
+  push:
+    branches: ["{{BASE_BRANCH}}"]
+  pull_request:
+
+# This pipeline reads the repository and nothing else. `pull_request_target` is never
+# the right trigger here: it would hand a writable token and the repository secrets to
+# code from the pull-request branch, and buys nothing `pull_request` does not provide.
+permissions:
+  contents: read
+
+concurrency:
+  # Pull requests group by ref, so a new push supersedes the run for the commit nobody
+  # is looking at any more. Pushes to the base branch group by commit, so they never
+  # contend at all.
+  #
+  # `cancel-in-progress: false` is not enough on its own for the base branch: a group
+  # holds one running workflow and at most one pending one, and a third push evicts the
+  # pending one regardless of that setting. The evicted commit would then sit on the
+  # base branch having never run these checks — and for anything proved only here,
+  # "not cancelled" and "actually verified" have to be the same thing.
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks:
+    name: Types, lint, tests, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # Third-party actions are pinned by commit, not by tag. A tag is a mutable
+      # pointer, and this step runs with access to the checkout.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # /init-project replaces this step with the toolchain setup its profile needs —
+      # setup-node reading .nvmrc, setup-dotnet reading global.json — pinned by commit
+      # like the checkout above, and followed by the profile's install command.
+      - name: Set up the toolchain
+        run: "{{CI_SETUP_STEPS}}"
+
+      # The second line behind .gitignore, and it has to cover the same set: .gitignore
+      # protects `.env` and `.env.*` with only `.env.example` excepted, so this guard
+      # must too. A `git add -f` past those lines is exactly what it exists to catch.
+      - name: Refuse a tracked environment file
+        run: |
+          tracked=$(git ls-files -- '*.env' '*.env.*' ':(exclude)*.env.example')
+          if [ -n "$tracked" ]; then
+            echo "These environment files are tracked by git:"
+            echo "$tracked"
+            exit 1
+          fi
+
+      - name: Type correctness
+        run: "{{CMD_TYPECHECK}}"
+
+      - name: Lint
+        run: "{{CMD_LINT}}"
+
+      - name: Format check
+        run: "{{CMD_FORMAT_CHECK}}"
+
+      - name: Unit tests
+        run: "{{CMD_TEST}}"
+
+      - name: Build
+        run: "{{CMD_BUILD}}"
+
+      # Producing an artifact and proving it runs are different claims: a bundle can
+      # resolve every import at build time and die on the first process start. This
+      # step starts what the build produced.
+      - name: Artifact smoke
+        run: "{{CMD_SMOKE}}"
+
+  # /init-project appends a second job here for whatever the developer machine cannot
+  # prove — the roles named in block 6 of the interview. It runs the real infrastructure
+  # rather than a stub, because a stub proves the stub.
+  #
+  # Two things that job must do, learned the expensive way:
+  #   - hold no secret and never point at a production environment. A local stack runs on
+  #     the deterministic keys its CLI prints, which are published constants rather than
+  #     credentials, and linking to the real project puts a destructive reset one typo away.
+  #   - assert that the suite was actually found and executed, not merely that the runner
+  #     exited zero. A renamed file or a moved directory otherwise leaves the step green
+  #     having tested nothing, which is the exact shape of proof evidence.md refuses.
+  integration:
+    name: "{{CI_INTEGRATION_JOB_NAME}}"
+    if: false # /init-project sets this, or deletes the job when block 6 answered "none"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Prove what only CI can prove
+        run: "{{CMD_INTEGRATION}}"

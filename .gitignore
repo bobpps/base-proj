@@ -1,0 +1,36 @@
+# Task worktrees. Both pipeline editions put their trees here, which is what lets
+# each one see the other's and refuse to check a branch out twice.
+.worktrees/
+
+# Environment files. The CI guard in .github/workflows/ci.yml must cover exactly
+# this set — it exists to catch a `git add -f` past these lines.
+.env
+.env.*
+!.env.example
+
+# Per-machine agent settings. `settings.json` is the project's and is committed;
+# `settings.local.json` holds one machine's permission grants and absolute paths,
+# and committing it hands every clone the grants of whoever wrote it.
+.claude/settings.local.json
+
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+out/
+bin/
+obj/
+*.tsbuildinfo
+
+# Tooling caches
+.cache/
+coverage/
+.nyc_output/
+.vs/
+.idea/
+*.user
+
+# OS noise
+.DS_Store
+Thumbs.db

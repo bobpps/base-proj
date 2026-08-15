@@ -1,0 +1,25 @@
+{
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {},
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Skill",
+      "Task",
+      "WebSearch",
+      "WebFetch(*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git worktree:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run watch:*)"
+    ]
+  }
+}
