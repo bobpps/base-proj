@@ -154,6 +154,8 @@ and run the procedure. **Do not run the git commands by hand** — the script is
 scripts/worktree-setup.sh --branch <branch> --base <base> --root <worktree-root>
 ```
 
+Add `--remote <name>` when the **Remote** row in `AGENTS.md` names one instead of saying `derived`.
+
 Exit 0 prints `worktree=` and `case=`; carry both into `implementation.md`. Exit 10, 11, or 12 is
 a **gate**: read `worktrees.md` for what each one means, ask through `AskUserQuestion`, and do not
 reach for the underlying git commands to get past it.
@@ -164,9 +166,13 @@ let `EnterWorktree` create the tree by `name`:** that form puts it somewhere the
 not ignore and the Codex edition does not know about, which breaks the property that lets the two
 editions see each other's trees.
 
-On a fresh run, write `plan.md` as the first act inside the tree, before the first edit, carrying
-what phases 2–4 concluded. On the resume path it is already there — step 5 covers what to do with
-it.
+Then write `plan.md` inside the tree, before the first edit, carrying what phases 2–4 concluded —
+including the gate answers and what each one ruled out. **Decide that by looking for the file, not
+by reading `case=`.** A run interrupted between the script creating the tree and the plan being
+written comes back as `case=resumed` with a clean tree and no plan, and a rule keyed on the case
+skips the record entirely — the requirements, the gate answers, and the plan the rest of the run
+is judged against. Where a plan is already there it belongs to this branch: reconcile it against
+what phases 2–4 just concluded rather than overwriting it.
 
 Then implement the approved scope, recording each applied safe default with its path as
 `failure-axes.md` requires. Pause at a gate if implementation reveals a boundary change the plan
@@ -251,8 +257,8 @@ into someone's summary.
 ## Resuming
 
 Read whichever artifacts exist, reconcile them against the commit history, and re-enter at the
-first phase whose exit condition is unmet. No `plan.md` → phase 5 has not started. No
-`validation.md` → phase 6. An open pull request → phase 11, **not** done.
+first phase whose exit condition is unmet. No `plan.md` → phase 5 has not finished, whether or not
+a worktree exists. No `validation.md` → phase 6. An open pull request → phase 11, **not** done.
 
 ## What must never happen
 

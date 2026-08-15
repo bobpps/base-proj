@@ -67,20 +67,55 @@ if [ "$BRANCH" = "$BASE" ]; then
   exit 2
 fi
 
-# The remote is derived rather than assumed. A repository whose canonical remote is not called
-# `origin` — a fork, a mirror, a second push target — would otherwise be fetched from and merged
-# against the wrong server, and every ref below would inherit that error.
-if [ -z "$REMOTE" ]; then
-  remotes="$(git -C "$REPO" remote)"
-  count="$(printf '%s\n' "$remotes" | grep -c . || true)"
-  if [ "$count" = "1" ]; then
-    REMOTE="$remotes"
-  elif printf '%s\n' "$remotes" | grep -qx origin; then
-    REMOTE=origin
-  else
-    echo "cannot derive the remote; pass --remote. Remotes: ${remotes//$'\n'/, }" >&2
+# --- Which remote? ----------------------------------------------------------------------------
+#
+# Read out of the authority that holds the fact, never out of a convention. `origin` is a default
+# that clone happens to write, not a statement that this repository's canonical server is origin —
+# a fork, a mirror, or a second push target all break that inference while leaving the name in
+# place. The wrong answer here poisons everything below it: the fetch, the ref the branch is
+# created from, both merges, and the push the run has not made yet.
+remotes="$(git -C "$REPO" remote)"
+remote_count="$(printf '%s\n' "$remotes" | grep -c . || true)"
+remote_list="${remotes//$'\n'/, }"
+
+has_remote() { printf '%s\n' "$remotes" | grep -Fqx -- "$1"; }
+
+# git records a branch's server in `branch.<name>.remote`, which is readable without checking the
+# branch out. A value of `.` means it tracks a local branch and names no server; a value naming a
+# remote that has since been removed names no server either.
+remote_of_branch() {
+  local configured
+  configured="$(git -C "$REPO" config --get "branch.$1.remote" || true)"
+  [ -n "$configured" ] && [ "$configured" != "." ] && has_remote "$configured" || return 0
+  printf '%s' "$configured"
+}
+
+if [ -n "$REMOTE" ]; then
+  has_remote "$REMOTE" || { echo "no such remote: $REMOTE. Remotes: $remote_list" >&2; exit 2; }
+elif [ "$remote_count" = 0 ]; then
+  echo "the repository has no remote, and this procedure needs one" >&2
+  exit 2
+elif [ "$remote_count" = 1 ]; then
+  REMOTE="$remotes"
+else
+  base_remote="$(remote_of_branch "$BASE")"
+  branch_remote="$(remote_of_branch "$BRANCH")"
+
+  # A fork workflow — base tracking one server, the task branch another — is a real arrangement
+  # that this procedure's single `--remote` cannot express. Refusing is the honest answer, and it
+  # is deliberately stricter than picking either one: a silent choice here is the defect this
+  # whole block exists to remove. Where both agree, or only one is configured, the order they are
+  # read in decides nothing.
+  if [ -n "$base_remote" ] && [ -n "$branch_remote" ] && [ "$base_remote" != "$branch_remote" ]; then
+    echo "$BASE tracks $base_remote and $BRANCH tracks $branch_remote; pass --remote" >&2
     exit 2
   fi
+
+  REMOTE="${base_remote:-$branch_remote}"
+  [ -n "$REMOTE" ] || {
+    echo "no branch names a remote to derive from; pass --remote. Remotes: $remote_list" >&2
+    exit 2
+  }
 fi
 
 WT="$ROOT/$BRANCH"

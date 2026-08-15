@@ -85,6 +85,8 @@ convenience:
 scripts/worktree-setup.sh --branch <branch> --base <base> --root <worktree-root>
 ```
 
+Add `--remote <name>` when the **Remote** row in `AGENTS.md` names one instead of saying `derived`.
+
 Exit 0 prints `worktree=` and `case=`; carry both into `implementation.md`. Exit 10, 11, or 12 is
 a gate: read `worktrees.md` for what each means, print the `Human decision required` block, and do
 not reach for the underlying git commands to get past it.
@@ -93,9 +95,12 @@ There is no session-level move into the tree in this edition, so run every subse
 the printed worktree path explicitly. A forgotten path writes into the main workspace, which is
 the failure the whole isolation contract exists to prevent.
 
-On a fresh run, write `plan.md` as the first act inside the tree, before the first edit, carrying
-what phases 2–4 concluded — including the gate answers and what they ruled out. On the resume path
-it is already there; `worktrees.md` §4 says what to do with it.
+Then write `plan.md` inside the tree, before the first edit, carrying what phases 2–4 concluded —
+including the gate answers and what they ruled out. **Decide that by looking for the file, not by
+reading `case=`.** A run interrupted between the script creating the tree and the plan being
+written comes back as `case=resumed` with a clean tree and no plan, and a rule keyed on the case
+skips the record entirely. Where a plan is already there it belongs to this branch: reconcile it
+against what phases 2–4 just concluded rather than overwriting it.
 
 **Phase 6 — prove it.** Run the proving commands from `AGENTS.md` in proportion to risk, and
 report each with its outcome and where it ran. `evidence.md` governs what each result means.

@@ -93,9 +93,16 @@ deleted by whoever next finds it inconvenient.
   on overlapping paths, or succeeds and blends incoming changes into work nobody has reviewed. The
   second outcome is worse because it looks like it worked.
 
-- **The remote is derived, not assumed.** A repository whose canonical remote is not `origin` — a
-  fork, a mirror, a second push target — would be fetched from and merged against the wrong
-  server, and every ref would inherit the error.
+- **The remote is read out of the authority that holds it, not out of a convention.** `origin` is a
+  name `git clone` happens to write; it is not a statement that this repository's canonical server
+  is origin, and a fork, a mirror, or a second push target all break that inference while leaving
+  the name in place. So: an explicit `--remote` if given, the only remote if there is one, otherwise
+  the server the base or task branch is configured to track. When the base and the task branch track
+  *different* servers — a fork workflow — the script refuses instead of choosing, because one
+  `--remote` cannot express two, and a silent choice there is the defect this rule removes.
+
+  This is the same shape as the permissions rule in `AGENTS.md`: read the fact from whatever holds
+  it, rather than from the change or the convention that suggests it.
 
 ## Afterwards
 

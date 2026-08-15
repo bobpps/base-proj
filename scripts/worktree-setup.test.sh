@@ -175,6 +175,45 @@ check "derived remote: exit 0" "0"        "$RC"
 check "derived remote: used"   "upstream" "$(field remote)"
 rm -rf "$D"
 
+# --- 11. with several remotes, the branch's configured server beats the name `origin` -----------
+#
+# The second remote points at the same bare repository, so the fetch behaves identically and the
+# assertion is only about which name was chosen. Preferring `origin` here would fetch the base
+# from the wrong server in a fork or a mirror, which is the whole failure this rule removes.
+D="$(new_fixture)"
+git -C "$D/clone" remote add canonical "$D/remote.git"
+git -C "$D/clone" config branch.main.remote canonical
+run "$D/clone"
+check "several remotes: exit 0"                    "0"         "$RC"
+check "several remotes: base's own server is used" "canonical" "$(field remote)"
+rm -rf "$D"
+
+# --- 12. several remotes and nothing to derive from: refuse rather than guess -------------------
+D="$(new_fixture)"
+git -C "$D/clone" remote add mirror "$D/remote.git"
+git -C "$D/clone" config --unset branch.main.remote
+run "$D/clone"
+check "nothing to derive from: exit 2" "2" "$RC"
+rm -rf "$D"
+
+# --- 13. base and branch tracking different servers is a fork workflow, not a default -----------
+D="$(new_fixture)"
+git -C "$D/clone" remote add mirror "$D/remote.git"
+git -C "$D/clone" config branch.main.remote origin
+git -C "$D/clone" branch feat/x main
+git -C "$D/clone" config branch.feat/x.remote mirror
+run "$D/clone"
+check "conflicting servers: exit 2" "2" "$RC"
+run "$D/clone" --remote origin
+check "conflicting servers: an explicit --remote resolves it" "0" "$RC"
+rm -rf "$D"
+
+# --- 14. an explicit remote that does not exist ------------------------------------------------
+D="$(new_fixture)"
+run "$D/clone" --remote nope
+check "unknown --remote: exit 2" "2" "$RC"
+rm -rf "$D"
+
 # --- 10. the base branch is refused ------------------------------------------------------------
 D="$(new_fixture)"
 OUT="$("$SCRIPT" --repo "$D/clone" --branch main --base main --root .worktrees 2>&1)"; RC=$?

@@ -117,6 +117,7 @@ at the required human gate.
 | --- | --- |
 | Task source | {{TRACKER}} |
 | Base branch | `{{BASE_BRANCH}}` |
+| Remote | {{REMOTE}} |
 | Branch pattern | `{{BRANCH_PATTERN}}` |
 | Commit subject | {{COMMIT_CONVENTION}} |
 | Worktree root | `{{WORKTREE_ROOT}}` (git-ignored) |
@@ -126,6 +127,11 @@ at the required human gate.
 
 Commit messages are imperative and explain **why**, not just what. The first line stays short;
 detail goes in the body as a list.
+
+**Remote** is `derived` in a repository with one remote, and a name in a repository with several.
+`scripts/worktree-setup.sh` works it out from the branch configuration where it can, and refuses
+rather than guessing where it cannot — so a project that made it guess wrong once records the
+answer here, and the run passes it as `--remote`.
 
 ## Security and secrets
 
