@@ -81,6 +81,11 @@ jobs:
       - name: Review snapshot
         run: bash scripts/review-snapshot.test.sh
 
+      # Guards the check that /init-project cannot reach the doctrine layer. The property is the
+      # load-bearing one in the two-layer design, so the thing that measures it has to keep working.
+      - name: Doctrine checksum
+        run: bash scripts/doctrine-checksum.test.sh
+
       - name: Type correctness
         run: "{{CMD_TYPECHECK}}"
 
