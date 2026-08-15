@@ -232,6 +232,11 @@ mean the axis was not understood, so reopen it rather than listing both.
 - Two consecutive rounds carrying blocking findings stop the run, whether or not they are
   related. Write the blocker down, leave the worktree in place, and hand it to the human with
   the precise decision needed.
+- **The count restarts at the human's answer.** This rule exists to put a human into a loop that
+  is not converging, not to cap how much work a run may do — so once one has decided, the rounds
+  before that decision are spent. Without the restart, a long loop that meets an unrelated
+  blocking finding every second round stops permanently and can never converge, which is a state
+  this doctrine reached in its own review rather than one imagined for it.
 - Two unrelated findings of equal severity in consecutive rounds are two ordinary findings, and
   the second is often a consequence of fixing the first. Escalate on **recurrence**, never on a
   matching severity.
@@ -265,6 +270,9 @@ fixed; the contents are yours to shape.**
 | `implementation.md` | What was decided while implementing, what deviated from the plan and why, each applied safe default with its path | end of phase 5 |
 | `validation.md` | Commands run, outcomes, and where each ran | end of phase 6, updated with the CI outcome once it exists |
 | `review.md` | Every finding with its id, the adjudication of each, one section per review round | phases 7–9 and 11 |
+
+**The shapes are in `docs/engineering/checkpoint-formats.md`**, read by every edition, so two runs
+produce records that can be compared with each other.
 
 Write each file at the end of the phase that owns it, not at the end of the run: an interrupted
 run should leave a record that is true as far as it goes.

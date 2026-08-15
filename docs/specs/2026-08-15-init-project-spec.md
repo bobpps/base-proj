@@ -175,9 +175,21 @@ project cannot prove — in those words, in `AGENTS.md`.
 | --- | --- | --- | --- |
 | 3.1 | Where tasks live | choice: GitHub Issues · Linear · files in `docs/tasks/` | GitHub Issues |
 | 3.2 | Base branch | confirm a derived value | the repository's current default |
-| 3.3 | Branch pattern | confirm-or-edit | `{author}/{task-id}` |
-| 3.4 | Commit subject convention | confirm-or-edit | `{task-id}: <imperative subject>` |
-| 3.5 | Worktree root | confirm-or-edit | `.worktrees/` |
+| 3.3 | Remote | **asked, and required, only when `git remote` lists more than one** | `derived` |
+| 3.4 | Branch pattern | confirm-or-edit | `{author}/{task-id}` |
+| 3.5 | Commit subject convention | confirm-or-edit | `{task-id}: <imperative subject>` |
+| 3.6 | Worktree root | confirm-or-edit | `.worktrees/` |
+
+3.3 is a question most repositories answer for themselves, which is why it is usually not asked.
+`scripts/worktree-setup.sh` works with one server per run: where the repository has exactly one
+remote it uses that, and where it has several it refuses until one is named. So the question is
+asked precisely when the repository cannot answer it, and the answer is then **required** — a
+project with several remotes whose Remote row says `derived` cannot set up a worktree at all.
+
+Writing `derived` everywhere else keeps false precision out: a name recorded by hand goes stale,
+and the single-remote case has a mechanism that stays current. When this question is asked, say in
+the option text what it settles — the named server is fetched, the branch is created from it,
+merged from it, and pushed to it, and branches on the other remotes are outside every run.
 
 Choosing Linear adds a note to `AGENTS.md` that the pipeline needs the Linear MCP server, and adds
 the tracker-comment etiquette: exactly two comments per run — one at the start, one at the end — and
@@ -333,11 +345,17 @@ Recorded because a list read later without its exclusions looks like an oversigh
 | `.nvmrc` or `global.json` | 2 |
 | `.claude/settings.json` | 3.1 (tracker plugin), 5 |
 | `.mcp.json` | 3.1, when the tracker needs a server |
-| `docs/decisions/0001-stack-and-validation.md` | 2, 6, plus the base-template stamp |
-| `docs/decisions/0002-architecture-boundaries.md` | 8, when it was answered |
+| `docs/decisions/<next>-stack-and-validation.md` | 2, 6, plus the base-template stamp |
+| `docs/decisions/<next+1>-architecture-boundaries.md` | 8, when it was answered |
 | `TEMPLATE.md` | deleted |
 
-The stamp in `0001` records the `base-proj` commit and the date this project was created from it.
+`<next>` is the next free number, not `0001`. The template ships decisions of its own — the first
+is `0001-one-remote-per-run.md` — and `0000-template.md` requires the next free number and forbids
+reuse, so a hardcoded `0001` would give every initialized repository two decisions wearing the same
+number. Read the directory and count.
+
+The stack-and-validation stamp records the `base-proj` commit and the date this project was created
+from it.
 Nothing reads it automatically — the template deliberately has no synchronisation mechanism — but a
 hand comparison later is impossible without it.
 
@@ -372,7 +390,8 @@ Mechanically checkable, on a fresh clone:
    every `run:` step contains a command rather than a placeholder.
 4. Each of the eight proving commands either runs successfully or is recorded in `AGENTS.md` as
    not applicable, with a reason.
-5. `docs/decisions/0001-*.md` exists and names the base commit.
+5. A stack-and-validation decision exists, numbered above every decision the template shipped, and
+   names the base commit.
 6. `docs/engineering/` is byte-identical to the template. **This is the acceptance test that
    matters most** — it is the mechanical proof that the interview cannot reach the doctrine.
 7. The final report lists every value that was asked rather than derived, and every placeholder

@@ -65,8 +65,11 @@ root by every skill edition and by every agent doing engineering work here.
 | `docs/engineering/evidence.md` | claiming anything works, and before writing `validation.md` |
 | `docs/engineering/failure-axes.md` | writing a plan, and again before briefing reviewers |
 | `docs/engineering/checkpoints.md` | starting any task run |
+| `docs/engineering/checkpoint-formats.md` | writing any checkpoint or artifact file |
 | `docs/engineering/review-loop.md` | driving the post-pull-request review rounds |
 | `docs/engineering/asking-questions.md` | putting any question to a human |
+| `docs/engineering/subagent-briefs.md` | dispatching the requirements debate or the review fan-out |
+| `docs/engineering/worktrees.md` | setting up or resuming a task run's isolated worktree |
 | `docs/engineering/writing-skills.md` | creating or editing a skill |
 
 Nothing in this file weakens anything in those. Where this file and the doctrine appear to
@@ -114,6 +117,7 @@ at the required human gate.
 | --- | --- |
 | Task source | {{TRACKER}} |
 | Base branch | `{{BASE_BRANCH}}` |
+| Remote | {{REMOTE}} |
 | Branch pattern | `{{BRANCH_PATTERN}}` |
 | Commit subject | {{COMMIT_CONVENTION}} |
 | Worktree root | `{{WORKTREE_ROOT}}` (git-ignored) |
@@ -123,6 +127,13 @@ at the required human gate.
 
 Commit messages are imperative and explain **why**, not just what. The first line stays short;
 detail goes in the body as a list.
+
+**Remote** is `derived` where the repository has exactly one remote, and **the name of a server**
+where it has several. `scripts/worktree-setup.sh` works with one server per run and will not
+choose between candidates: it fetches that server, creates the branch from it, merges from it, and
+phase 10 pushes to it. Branches on other remotes are outside the run. Where several remotes exist
+and this row does not name one, the procedure refuses rather than picking — see
+`docs/engineering/worktrees.md` for why inference was removed rather than improved.
 
 ## Security and secrets
 
