@@ -232,6 +232,11 @@ mean the axis was not understood, so reopen it rather than listing both.
 - Two consecutive rounds carrying blocking findings stop the run, whether or not they are
   related. Write the blocker down, leave the worktree in place, and hand it to the human with
   the precise decision needed.
+- **The count restarts at the human's answer.** This rule exists to put a human into a loop that
+  is not converging, not to cap how much work a run may do — so once one has decided, the rounds
+  before that decision are spent. Without the restart, a long loop that meets an unrelated
+  blocking finding every second round stops permanently and can never converge, which is a state
+  this doctrine reached in its own review rather than one imagined for it.
 - Two unrelated findings of equal severity in consecutive rounds are two ordinary findings, and
   the second is often a consequence of fixing the first. Escalate on **recurrence**, never on a
   matching severity.
