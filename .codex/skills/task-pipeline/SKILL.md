@@ -28,6 +28,7 @@ does not restate it.
 - `docs/engineering/evidence.md` — before the validation checkpoint.
 - `docs/engineering/asking-questions.md` — before any gate.
 - `docs/engineering/subagent-briefs.md` — before phase 2 and again before phase 7.
+- `docs/engineering/worktrees.md` — in phase 5, before the first git command.
 - `docs/engineering/review-loop.md` — in phase 11.
 - `README.md`, `AGENTS.md`, and every applicable `CLAUDE.md`.
 - Every file in `docs/decisions/`.
@@ -75,41 +76,19 @@ Who approves that plan depends on the run, per phase 4 of `checkpoints.md`:
   contract does not ask for is what turns an autonomous pipeline into a supervised one.
 - **Analysis-only** — publish the plan and stop.
 
-**Phase 5 — the worktree.** After approval and before the first edit, with the root and branch
-pattern from `AGENTS.md`. Decide which of four cases the run is in before running anything — the
-commands differ, and two of them fail outright in the wrong case:
+**Phase 5 — the worktree.** After approval and before the first edit, derive the branch name from
+the pattern in `AGENTS.md` and follow `docs/engineering/worktrees.md` — fetch, classify into one of
+five cases, synchronise against both the branch's own remote head and the base, inspect before
+synchronising on the resume path, and gate on a branch checked out elsewhere. Both editions read
+that file, so the enumeration cannot drift between them.
 
-| Case | What to do |
-| --- | --- |
-| The branch does not exist | `git worktree add <root>/<branch> -b <branch> <base-branch>` |
-| It exists; no tree for it under the configured root | `git worktree add <root>/<branch> <branch>`, then synchronise |
-| It exists; a tree for it is already under the configured root | Reuse that tree — this is the resume path — then synchronise |
-| It is checked out anywhere else, the caller's ordinary checkout included | Stop and gate |
+One thing belongs to this edition: there is no session-level move into the tree, so run every
+subsequent command with the worktree path explicitly. A forgotten path writes into the main
+workspace, which is the failure the whole isolation contract exists to prevent.
 
-`-b` means *create a new branch* and fails on one that already exists.
-
-Synchronise before the first edit, in both existing-branch cases:
-
-```sh
-git -C <root>/<branch> fetch origin
-git -C <root>/<branch> merge origin/<base-branch>
-```
-
-Merge, never rebase — the branch may already be pushed, and rebasing would demand a force-push. A
-branch created fresh off the base needs none of this. Do it here rather than at push time: the
-same conflict costs a minute now and costs the whole validation pass when it surfaces afterwards.
-
-At the gate, offer a different branch or ask the human to free that checkout. Do not take over
-another tree's checkout — git cannot check out one branch twice, and a checkout outside the
-configured root belongs to somebody else's work.
-
-Run every subsequent command with the worktree path explicitly. There is no session-level move
-into it here, so the path is threaded by hand and a forgotten one writes into the main workspace.
-
-Write `plan.md` as the first act inside the tree, before the first edit, carrying what phases 2–4
-concluded — including the gate answers and what they ruled out. On the resume path it is already
-there: read it rather than overwriting it, and continue from the first phase whose exit condition
-is unmet.
+On a fresh run, write `plan.md` as the first act inside the tree, before the first edit, carrying
+what phases 2–4 concluded — including the gate answers and what they ruled out. On the resume path
+it is already there; `worktrees.md` §4 says what to do with it.
 
 **Phase 6 — prove it.** Run the proving commands from `AGENTS.md` in proportion to risk, and
 report each with its outcome and where it ran. `evidence.md` governs what each result means.

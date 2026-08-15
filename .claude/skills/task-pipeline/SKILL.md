@@ -39,6 +39,7 @@ is not the rule.
 - `docs/engineering/review-loop.md` — in phase 11.
 - `docs/engineering/subagent-briefs.md` — before phase 2 and again before phase 7. Both editions
   read this one, so a brief cannot drift between them.
+- `docs/engineering/worktrees.md` — in phase 5, before the first git command.
 - `AGENTS.md` and every applicable `CLAUDE.md` — the project's own facts.
 
 ## Every project fact comes from `AGENTS.md`
@@ -145,56 +146,21 @@ mode is read-only.
 
 ## Phase 5: enter the worktree, then implement
 
-After approval and before the first edit:
+After approval and before the first edit, derive the branch name from the pattern in `AGENTS.md`
+and follow **`docs/engineering/worktrees.md`** — fetch, classify into one of five cases,
+synchronise against both the branch's own remote head and the base, inspect before synchronising
+on the resume path, and gate on a branch checked out elsewhere. Both editions read that file, so
+the enumeration cannot drift between them.
 
-1. Derive the branch name from the task using the pattern in `AGENTS.md`. Never the default
-   branch.
+One thing belongs to this edition. Move the session into the tree with `EnterWorktree`, passing
+`path:`, so every later command runs there without the path being threaded through by hand.
+**Create the tree with `git worktree add` first rather than letting `EnterWorktree` create one by
+`name`** — the name form puts it somewhere the repository does not ignore and the Codex edition
+does not know about, which breaks the property that lets the two editions see each other's trees.
 
-2. **Decide which of four cases the run is in before running anything.** The commands differ, and
-   two of them fail outright in the wrong case.
-
-   | Case | What to do |
-   | --- | --- |
-   | The branch does not exist | `git worktree add <root>/<branch> -b <branch> <base-branch>` |
-   | It exists; no tree for it under the configured root | `git worktree add <root>/<branch> <branch>`, then synchronise |
-   | It exists; a tree for it is already under the configured root | Reuse that tree — this is the resume path — then synchronise |
-   | It is checked out anywhere else, the caller's ordinary checkout included | **Gate**, per step 5 |
-
-   `-b` means *create a new branch* and fails on one that already exists, which is a live case
-   because this skill accepts an existing branch name as its argument.
-
-3. **Synchronise before the first edit**, in both existing-branch cases:
-
-   ```sh
-   git -C <root>/<branch> fetch origin
-   git -C <root>/<branch> merge origin/<base-branch>
-   ```
-
-   Merge, never rebase: the branch may already be pushed, and rebasing would demand a force-push.
-   A branch created fresh off the base needs none of this.
-
-   Do it here rather than at push time. The same conflict costs a minute now and costs the whole
-   validation pass when it surfaces after the work is done — and a stale local tip is also how a
-   push gets rejected at the very end of an otherwise finished run.
-
-4. Move the session into the tree with `EnterWorktree`, passing `path:`, so every later command
-   runs there without the path being threaded through by hand.
-
-   **Create the tree with `git worktree add` first rather than letting `EnterWorktree` create one
-   by `name`.** The name form puts it somewhere the repository does not ignore and the Codex
-   edition does not know about, which breaks the property that lets the two editions see each
-   other's trees.
-
-5. At the gate, offer exactly two ways out: a different branch, or the human freeing that
-   checkout.
-
-   Do not offer to run in the caller's ordinary checkout. It sits outside the configured root, so
-   working there breaks the isolation contract in `checkpoints.md` — and a confirmation that the
-   tree "is clean" describes one moment rather than a property of the tree.
-
-Write `plan.md` as the first act inside the tree, before the first edit, carrying what phases 2–4
-concluded. On the resume path it is already there: read it rather than overwriting it, and
-re-enter at the first phase whose exit condition is unmet.
+On a fresh run, write `plan.md` as the first act inside the tree, before the first edit, carrying
+what phases 2–4 concluded. On the resume path it is already there — step 5 covers what to do with
+it.
 
 Then implement the approved scope, recording each applied safe default with its path as
 `failure-axes.md` requires. Pause at a gate if implementation reveals a boundary change the plan

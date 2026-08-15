@@ -96,6 +96,16 @@ gets pasted into the checkpoint.
 Before launching, record `git status --porcelain` and the diff under review. Launch the passes in
 one message. Afterwards, compare `git status --porcelain` against the recording.
 
+**Coverage never depends on what is installed.** `checkpoints.md` requires six lenses on every
+Normal and Risky run. A specialist that happens to be installed changes *who* runs a lens and how
+well; it never changes *whether* one runs. Where the specialist is absent, brief the lens by hand
+from the questions below and say in the checkpoint which passes ran with a specialist and which
+were briefed — the two are not equally strong, and a reader deserves to know which they are
+looking at.
+
+This matters most in a fresh checkout of a project built from the template, where nothing is
+installed yet and every pass is hand-briefed. That is a working configuration, not a degraded one.
+
 ### Passes with an installed specialist
 
 | Pass | Agent | Notes |
@@ -119,7 +129,8 @@ accepted.
 
 For a Risky run, use the `security-review` skill for the security pass where it is installed: it
 reviews the pending changes on the branch, which is exactly the scope wanted, and it is maintained
-outside this pipeline.
+outside this pipeline. Where it is not installed, brief the security lens by hand like any other —
+a Risky run without a security pass is not a Risky run.
 
 ### Passes briefed by hand
 
@@ -162,7 +173,17 @@ Your specific question:
 - **Scope** — "Does this change stay inside what the task authorized? Flag anything belonging to
   the out-of-scope list in `README.md` and `AGENTS.md`, and any unrelated refactoring or cleanup
   that arrived alongside the task."
-- **Security**, for a Normal run where `security-review` is not used — "Does this change leak or
+- **Correctness**, where no specialist is installed — "Does this change do what the task asked,
+  and does it do it correctly? Walk the execution paths the diff introduces or touches, including
+  the ones no test exercises. Check every branch condition, boundary comparison, loop termination,
+  and early return against what the surrounding code assumes. Report a defect only where you can
+  name the input or state that produces the wrong result."
+- **Test coverage**, where no specialist is installed — "Which behaviour introduced or changed by
+  this diff is not covered by a test, and which of those gaps matter? Check that a bug fix carries
+  a test that fails without it, that new branches are exercised, and that the assertions pin the
+  invariant rather than an incidental value. Name the tests worth adding, in priority order, and
+  say which gaps are acceptable and why."
+- **Security**, where `security-review` is not used — "Does this change leak or
   weaken anything? Check for hardcoded secrets, a privileged credential reachable from code that
   should not hold one, cross-user data exposure, missing or bypassed access control, publicly
   reachable private data, internal errors surfacing through public error responses, and

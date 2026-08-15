@@ -69,6 +69,7 @@ root by every skill edition and by every agent doing engineering work here.
 | `docs/engineering/review-loop.md` | driving the post-pull-request review rounds |
 | `docs/engineering/asking-questions.md` | putting any question to a human |
 | `docs/engineering/subagent-briefs.md` | dispatching the requirements debate or the review fan-out |
+| `docs/engineering/worktrees.md` | setting up or resuming a task run's isolated worktree |
 | `docs/engineering/writing-skills.md` | creating or editing a skill |
 
 Nothing in this file weakens anything in those. Where this file and the doctrine appear to
