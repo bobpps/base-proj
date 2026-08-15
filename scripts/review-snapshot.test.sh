@@ -89,11 +89,18 @@ same "ignored files do not move the snapshot" "$BEFORE" "$(snap)"
 # the snapshot — the file's content moves from the untracked component into the tracked one, and an
 # edit still registers.
 printf 'fresh\n' > "$D/created-in-phase-5.txt"
-git -C "$D" add --intent-to-add --all
+printf 'scratch\n' > "$D/not-in-scope.txt"          # an untracked file the plan never approved
+git -C "$D" add --intent-to-add -- created-in-phase-5.txt
 if git -C "$D" diff HEAD --name-only | grep -qx created-in-phase-5.txt; then
   pass "intent-to-add: the new file appears in git diff HEAD"
 else
   fail "intent-to-add: the new file appears in git diff HEAD" "absent from the diff"
+fi
+
+if git -C "$D" diff HEAD --name-only | grep -qx not-in-scope.txt; then
+  fail "intent-to-add: an unapproved file stays out of the review input" "not-in-scope.txt is in the diff"
+else
+  pass "intent-to-add: an unapproved file stays out of the review input"
 fi
 
 BEFORE="$(snap)"

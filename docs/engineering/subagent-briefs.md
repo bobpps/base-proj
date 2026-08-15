@@ -98,16 +98,25 @@ them, and that command cannot see an untracked file at all — so a reviewer bri
 reviews every line the run **modified** and none of the lines it **wrote**. New code is exactly the
 code most worth reviewing, and its absence looks like a clean diff rather than like a mistake.
 
-Mark the additions first, then take the diff:
+Mark the new files first — **by name, never `--all`** — then take the diff:
 
 ```sh
-git -C <worktree> add --intent-to-add --all
+git -C <worktree> add --intent-to-add -- <the new files in the approved scope>
 git -C <worktree> diff HEAD
 ```
 
-`--intent-to-add` records that the paths exist without staging their content, which is what brings
-them into the diff. It stages nothing, so phase 10 still stages the approved paths explicitly and
-the bulk-stage prohibition is untouched. It respects `.gitignore`, so build output stays out.
+`--intent-to-add` records that a path exists without staging its content, which is what brings it
+into the diff. It stages nothing, so phase 10 still stages the approved paths explicitly and the
+bulk-stage prohibition is untouched.
+
+The path list is the one the plan approved — the same list phase 10 stages. `--all` would reach
+every untracked file in the tree, including scratch notes, a stray log, and anything an earlier run
+left behind, and the diff would then carry their contents to every reviewer: content nobody
+approved, nobody will commit, and nobody asked to have read.
+
+The consequence is worth stating rather than discovering. **An untracked file outside the approved
+scope is not shown to the reviewers.** That is correct — it is not part of the change — and it is
+phase 10's explicit staging, not this step, that keeps it out of the commit.
 
 Do this **before** the first snapshot below, so both snapshots see the same tree — otherwise the
 marking itself registers as a change and reads as a reviewer that edited.

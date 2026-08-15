@@ -237,6 +237,56 @@ else
 fi
 rm -rf "$D"
 
+# --- 15a. a tracking ref for a branch the server has deleted is not believed ---------------------
+#
+# `fetch --prune` only revalidates what the configured refspec covers, so in a restricted clone a
+# ref this script fetched by name on an earlier run outlives the branch itself. Believing it
+# restores the contents of a branch that no longer exists and lets phase 10 recreate it.
+D="$(new_fixture)"
+push_commit "$D" feat/x work.txt remote-work
+rm -rf "$D/clone"
+git clone --quiet --single-branch --branch main "$D/remote.git" "$D/clone"
+git -C "$D/clone" config user.email t@t; git -C "$D/clone" config user.name t
+run "$D/clone"
+check "deleted branch: the first run finds it" "created-from-remote" "$(field case)"
+
+git -C "$D/clone" worktree remove --force "$(field worktree)"
+git -C "$D/clone" branch -D feat/x >/dev/null 2>&1
+git -C "$D/seed" push --quiet origin --delete feat/x
+
+run "$D/clone"
+check  "deleted branch: exit 0"                        "0"           "$RC"
+check  "deleted branch: not resurrected from the cache" "created-new" "$(field case)"
+if [ ! -e "$(field worktree)/work.txt" ]; then
+  pass "deleted branch: its contents are not restored"
+else
+  fail "deleted branch: its contents are not restored" "work.txt came back"
+fi
+rm -rf "$D"
+
+# --- 15b. a merge that fails without conflicting is not reported as a conflict -------------------
+#
+# Git fails here for reasons that have nothing to do with content: no configured identity in a
+# fresh environment, a signing program that is missing or refuses. Signing is used to reproduce it
+# because it fails the same way everywhere, where identity detection does not.
+D="$(new_fixture)"
+push_commit "$D" feat/x theirs.txt collaborator
+git -C "$D/clone" fetch --quiet origin
+git -C "$D/clone" switch --quiet -c feat/x origin/main
+echo mine > "$D/clone/mine.txt"
+git -C "$D/clone" add -A; git -C "$D/clone" commit --quiet -m mine
+git -C "$D/clone" switch --quiet main
+git -C "$D/clone" config commit.gpgsign true
+git -C "$D/clone" config gpg.program /nonexistent-signing-program
+run "$D/clone"
+check "merge failure: exit 2, not the conflict gate" "2" "$RC"
+if printf '%s\n' "$OUT" | grep -q "no conflict to resolve"; then
+  pass "merge failure: says what actually happened"
+else
+  fail "merge failure: says what actually happened" "got [$OUT]"
+fi
+rm -rf "$D"
+
 # --- 15. the target path occupied by something that is not a worktree ---------------------------
 D="$(new_fixture)"
 mkdir -p "$D/clone/.worktrees/feat/x"

@@ -136,13 +136,25 @@ git -C "$REPO" fetch --prune "$REMOTE" >/dev/null 2>&1 || {
 # against a fresh namesake, and the collision surfaces only when the push is rejected at the end of
 # an otherwise finished run. So ask for the two refs this procedure needs, by name.
 #
-# Best-effort: either may legitimately be missing. A task branch usually does not exist yet, and a
-# missing base is caught below with a message that says so. Connectivity was proved above, so a
-# failure here means the ref is not there rather than that the server is unreachable.
+# The server is asked every time, and an existing tracking ref does not excuse the question. A
+# tracking ref is a cache, and `--prune` only revalidates what the configured refspec covers — so in
+# a restricted clone a ref fetched explicitly by an earlier run survives the branch being deleted on
+# the server, and this procedure would then restore the contents of a branch that no longer exists
+# and let phase 10 recreate it.
+#
+# `ls-remote` is the authority. Where it says the branch is gone, the stale tracking ref is deleted
+# rather than believed. Where it cannot be reached at all, nothing is touched: an unanswered
+# question is not an answer, and deleting refs on a network error would destroy the only record of
+# what the server last held.
 for ref in "$BASE" "$BRANCH"; do
-  if ! ref_exists "refs/remotes/$REMOTE/$ref"; then
+  if ! listing="$(git -C "$REPO" ls-remote --heads "$REMOTE" "refs/heads/$ref" 2>/dev/null)"; then
+    continue
+  fi
+  if [ -n "$listing" ]; then
     git -C "$REPO" fetch "$REMOTE" \
       "+refs/heads/$ref:refs/remotes/$REMOTE/$ref" >/dev/null 2>&1 || true
+  elif ref_exists "refs/remotes/$REMOTE/$ref"; then
+    git -C "$REPO" update-ref -d "refs/remotes/$REMOTE/$ref"
   fi
 done
 
@@ -248,8 +260,24 @@ fi
 # once — a previous run here, a collaborator there — and --ff-only aborts on exactly that case
 # while naming it as expected. Rebase is not an option: the branch may already be pushed.
 merge_or_gate() {
-  local ref="$1"
-  if ! git -C "$WT" merge --no-edit "$ref" >/dev/null 2>&1; then
+  local ref="$1" out rc=0
+  out="$(git -C "$WT" merge --no-edit "$ref" 2>&1)" || rc=$?
+  if [ "$rc" != 0 ]; then
+    # A failed merge is not the same thing as a conflict. Git also fails here when it cannot make
+    # the merge commit at all — no configured identity in a fresh environment, a signing program
+    # that is missing or refuses — and in that case it leaves no unresolved path behind. Reporting
+    # `gate=merge-conflict` there sends a human looking for a conflict that does not exist while
+    # the actual message, which git already wrote, goes in the bin.
+    #
+    # Unmerged paths are the test. `MERGE_HEAD` is not: a merge that resolved cleanly and then
+    # failed to commit still has one.
+    if [ -z "$(git -C "$WT" diff --name-only --diff-filter=U 2>/dev/null)" ]; then
+      git -C "$WT" merge --abort >/dev/null 2>&1 || true
+      echo "merging $ref into $BRANCH failed, and git left no conflict to resolve." >&2
+      echo "This is a repository or environment problem rather than a decision:" >&2
+      printf '%s\n' "$out" >&2
+      exit 2
+    fi
     git -C "$WT" merge --abort >/dev/null 2>&1 || true
     emit_gate merge-conflict \
       "branch=$BRANCH" \
