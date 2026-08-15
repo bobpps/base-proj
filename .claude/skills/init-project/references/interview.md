@@ -77,6 +77,11 @@ with one server per run: where there is exactly one remote it uses that, and whe
 several it refuses until one is named. So a project with several remotes whose Remote row still
 says `derived` cannot set up a worktree at all — the answer is required, not optional.
 
+**Zero remotes is not the same case as one.** It is the normal state right after the setup steps,
+which replace the history and take the cloned `origin` with it. Do not ask 3.3 — there is nothing
+to choose between — but do not let it pass silently either: the Remote row takes `derived`, and the
+final report names the missing remote as an unmet prerequisite. `SKILL.md` has the table.
+
 When it is asked, say in the option text what it settles: the named server is fetched, the branch
 is created from it, merged from it, and pushed to it, and branches on the other remotes are outside
 every run. `docs/decisions/0001-one-remote-per-run.md` carries the reasoning if the human wants it.

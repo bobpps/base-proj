@@ -31,6 +31,13 @@ the rename existed.
 So the write is: fill the placeholders, rename to `ci.yml`, and remove the `.template`. A filled
 `ci.yml.template` still never runs, and it looks exactly like a working CI configuration.
 
+**Delete the header comment while renaming.** The block at the top explaining `{{PLACEHOLDER}}`
+values and why the `.template` suffix keeps the file inert describes a mechanism that stops
+existing at the moment of the rename. Left in place it is a stale explanation carrying literal
+placeholder examples, in a file that is now supposed to be free of them.
+
+That is the only comment to remove. Everything below it explains a line that is still there.
+
 Two structural pieces are already in the file and are not the interview's to decide — the
 concurrency group, the read-only permissions, and the tracked-environment-file guard all carry
 their reasoning in comments. Leave them and their comments intact. A configuration line whose

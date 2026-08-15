@@ -62,9 +62,25 @@ collected rather than used:
 | --- | --- |
 | Project name | the directory name, kebab-cased |
 | Base branch | the repository's current default |
-| Remote | `git remote` — and only ask when it lists more than one |
+| Remote | `git remote` — three states, see below |
 | Stack profile | a `package.json`, a `*.csproj`, a `global.json` if present |
 | Platform and reviewer candidates | the remote host, and whichever platform CLI is installed |
+
+**`git remote` has three answers, not two.** The setup steps in `TEMPLATE.md` replace the history,
+which takes the cloned `origin` with it — so **zero remotes is the normal state of a repository
+that has just followed the instructions**, not an exotic one. Treating it as the single-remote case
+writes a Remote row that reads fine and cannot support a task run, because
+`scripts/worktree-setup.sh` refuses a repository with no remote.
+
+| `git remote` lists | Remote row | What else happens |
+| --- | --- | --- |
+| exactly one | `derived` | nothing; the script works it out |
+| more than one | the name, asked and required | question 3.3 |
+| none | `derived` | **the final report names it as an unmet prerequisite**, in those words: no remote is configured yet, and the first task run will stop until one is added |
+
+`derived` is the right *value* in the zero case — it becomes correct the moment a remote is added —
+so what is missing is the warning, not the answer. Say it in the report rather than inventing a
+placeholder for a question the human was never asked.
 
 **3. Record the doctrine checksum**, per the section above.
 
@@ -130,11 +146,16 @@ scripts/placeholders.sh         # exit 0 means nothing unresolved; {{TODO}} mark
 ls .github/workflows/           # ci.yml present, no .template
 ```
 
-**Use `placeholders.sh` rather than grepping for `{{`.** A plain grep matches two things that are
-supposed to be there forever: `${{ github.sha }}` and every other GitHub Actions expression in the
-workflow, and the skills and specification that *describe* placeholders in order to refuse them. A
-check that can never pass gets ignored, and an agent trying to make it pass edits a workflow's own
-logic to satisfy a pattern.
+**Delete `TEMPLATE.md` before running these, not after.** It is the last act of the *writing*, and
+the verification comes after the writing — a file describing a template the repository is no longer
+is not part of what gets checked.
+
+**Use `placeholders.sh` rather than grepping for `{{`.** A plain grep matches things that are
+supposed to be there forever: `${{ github.sha }}` and every other GitHub Actions expression, and
+every document whose subject is the template itself. That was got wrong twice by excluding those
+documents one by one, so the script inverts it and scans only the files the interview writes. A
+check that can never pass is not ignored so much as satisfied dishonestly — by editing whatever is
+easiest to edit, which in a workflow means its own expressions.
 
 | Check | What a pass means |
 | --- | --- |
@@ -145,13 +166,12 @@ logic to satisfy a pattern.
 | Each of the eight proving commands runs, or is recorded as not applicable with a reason | `evidence.md` distinguishes "cannot be proved" from "nothing to prove" |
 | A stack-and-validation decision exists, numbered above every decision the template shipped | The base commit is recorded while it is still knowable |
 
-Then delete `TEMPLATE.md`. That is the last act, and only on a complete first run.
-
 The final report says, in the language block 1 chose:
 
 - Every value that was **asked** rather than derived.
 - Every `{{TODO}}` still standing, with the block that would fill it.
 - Every proving command that could not be run here, and why.
+- Any unmet prerequisite — a repository with no remote configured yet is the common one.
 - The doctrine checksum, before and after.
 
 ## Re-running
