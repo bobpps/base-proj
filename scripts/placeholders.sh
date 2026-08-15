@@ -1,17 +1,26 @@
 #!/usr/bin/env bash
 #
-# Lists the template placeholders still standing in this repository.
+# Lists the template placeholders still standing in the files a configuration run is meant to fill.
 #
-# `init-project` runs this to decide whether a configuration run is finished, and reports whatever
-# it prints. It exists as a script because the obvious one-liner — grep for `{{` — is wrong in two
-# ways that both look like success:
+# `init-project` runs this to decide whether a run is finished, and reports whatever it prints.
 #
-#   - `${{ github.sha }}` in a GitHub workflow is a valid expression, not an unfilled placeholder.
-#     An agent clearing the check by hand would edit the workflow's own logic to satisfy a grep.
-#   - The skills and the specification *describe* placeholders in order to refuse them. Their text
-#     is supposed to contain `{{PLACEHOLDER}}` forever, and a check that counts it can never pass.
+# It takes an **allowlist**, not an exclusion list, and that is the whole design. The obvious
+# version — grep the tree for `{{`, minus some exceptions — was written twice and was incomplete
+# both times: first it counted the skills and the specification, which describe placeholders in
+# order to refuse them; then, with those excluded, it still counted TEMPLATE.md and the workflow's
+# own header comment. An exclusion list fails in the direction that makes the check unpassable, and
+# an unpassable check is not ignored so much as satisfied dishonestly — by editing whatever is
+# easiest to edit, which in a workflow means its own `${{ }}` expressions.
 #
-#   ./placeholders.sh [--repo <dir>]
+# Inverting it removes the whole class. The set of files that must end up free of placeholders is
+# exactly the set the interview writes, and that set is enumerated in the skill's own writing map
+# rather than inferred here. Every other file in the repository may contain `{{` forever, and
+# nothing about a new document can make this check wrong.
+#
+#   ./placeholders.sh [--repo <dir>] [path ...]
+#
+# Paths default to the files `init-project` fills. Missing ones are skipped rather than reported:
+# a project with no `.mcp.json` has not left a placeholder in it.
 #
 # Exit 0 when nothing is unresolved — `{{TODO}}` markers may remain, since those are answers the
 # human deferred and the final report names each one. Exit 1 when an unresolved placeholder is
@@ -20,51 +29,64 @@
 set -uo pipefail
 
 REPO="."
+PATHS=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --repo) REPO="${2-}"; shift 2 ;;
-    -h|--help) echo "usage: placeholders.sh [--repo <dir>]" >&2; exit 2 ;;
-    *) echo "unknown argument: $1" >&2; exit 2 ;;
+    -h|--help) echo "usage: placeholders.sh [--repo <dir>] [path ...]" >&2; exit 2 ;;
+    -*) echo "unknown argument: $1" >&2; exit 2 ;;
+    *) PATHS+=("$1"); shift ;;
   esac
 done
 
 [ -d "$REPO" ] || { echo "no such directory: $REPO" >&2; exit 2; }
 
-# Directories whose whole job is to talk about placeholders. Excluded by path rather than by
-# content, because excluding by content would also hide a real placeholder that happened to sit
-# next to an example.
-is_documentation_about_placeholders() {
-  case "$1" in
-    ./.claude/skills/*|./.codex/skills/*|./.agents/skills/*|./docs/specs/*) return 0 ;;
-    *) return 1 ;;
-  esac
-}
+if [ "${#PATHS[@]}" -eq 0 ]; then
+  PATHS=(
+    AGENTS.md
+    CLAUDE.md
+    README.md
+    .github/workflows/ci.yml
+    .claude/settings.json
+    .mcp.json
+    package.json
+    global.json
+    .nvmrc
+  )
+fi
 
 todo=0
 unresolved=0
 
-while IFS= read -r hit; do
-  path="${hit%%:*}"
-  is_documentation_about_placeholders "$path" && continue
+for rel in "${PATHS[@]}"; do
+  f="$REPO/$rel"
+  [ -f "$f" ] || continue
 
-  # `${{ … }}` belongs to GitHub Actions and to every other tool that borrowed the syntax. Strip
-  # those occurrences from the line before deciding whether anything is left.
-  stripped="$(printf '%s' "$hit" | sed 's/\${{[^}]*}}//g')"
-  case "$stripped" in
-    *'{{'*) ;;
-    *) continue ;;
-  esac
+  n=0
+  while IFS= read -r line; do
+    n=$((n + 1))
 
-  case "$stripped" in
-    *'{{TODO}}'*) todo=$((todo + 1));       printf 'todo       %s\n' "$hit" ;;
-    *)            unresolved=$((unresolved + 1)); printf 'unresolved %s\n' "$hit" ;;
-  esac
-done < <(
-  cd "$REPO" && grep -rn '{{' \
-    --include='*.md' --include='*.yml' --include='*.yaml' --include='*.json' \
-    --include='*.template' \
-    --exclude-dir=.git --exclude-dir=node_modules . 2>/dev/null
-)
+    # `${{ … }}` belongs to GitHub Actions and to everything else that borrowed the syntax. It is
+    # not an unfilled value, and a run that "cleared" it would be editing the workflow's logic.
+    stripped="$(printf '%s' "$line" | sed 's/\${{[^}]*}}//g')"
+
+    # Count the deferred answers, then take them out of the line. Doing this in one step rather
+    # than branching on the line as a whole is what stops `{{TODO}} and {{PROJECT_NAME}}` being
+    # filed as a deferred answer and reported as a finished run.
+    while case "$stripped" in *'{{TODO}}'*) true ;; *) false ;; esac; do
+      todo=$((todo + 1))
+      stripped="${stripped/'{{TODO}}'/}"
+      printf 'todo       %s:%s:%s\n' "$rel" "$n" "$line"
+    done
+
+    case "$stripped" in
+      *'{{'*)
+        unresolved=$((unresolved + 1))
+        printf 'unresolved %s:%s:%s\n' "$rel" "$n" "$line"
+        ;;
+    esac
+  done < "$f"
+done
 
 echo "todo=$todo"
 echo "unresolved=$unresolved"
