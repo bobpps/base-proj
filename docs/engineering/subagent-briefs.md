@@ -106,6 +106,11 @@ looking at.
 This matters most in a fresh checkout of a project built from the template, where nothing is
 installed yet and every pass is hand-briefed. That is a working configuration, not a degraded one.
 
+**Every pass in the table below has a hand-briefed counterpart further down, including the
+conditional error-handling one.** When a pass is added to either list, it is added to both in the
+same edit — the first version of this file gave three lenses a fallback and left the fourth
+without one, which was found only because a reviewer read both lists against each other.
+
 ### Passes with an installed specialist
 
 | Pass | Agent | Notes |
@@ -173,6 +178,13 @@ Your specific question:
 - **Scope** — "Does this change stay inside what the task authorized? Flag anything belonging to
   the out-of-scope list in `README.md` and `AGENTS.md`, and any unrelated refactoring or cleanup
   that arrived alongside the task."
+- **Error handling**, where no specialist is installed and the diff touches catch blocks,
+  fallbacks, retries, or job error states — "Where does this change swallow a failure? For every
+  caught exception, default value, fallback branch, and empty-result path the diff introduces or
+  touches, say what the caller can no longer distinguish. Check in particular whether a failure to
+  act is reported as an outcome of acting, and whether 'there is nothing there' stays separable
+  from 'we could not find out'. Cross-reference the five axes in
+  `docs/engineering/failure-axes.md`."
 - **Correctness**, where no specialist is installed — "Does this change do what the task asked,
   and does it do it correctly? Walk the execution paths the diff introduces or touches, including
   the ones no test exercises. Check every branch condition, boundary comparison, loop termination,
