@@ -7,9 +7,14 @@ editions of the pipeline — produce comparable records.
 Replace the placeholders, delete bullets that do not apply, and keep the evidence concrete. Never
 mark work complete that was not run or verified.
 
-The structural headings are English and stay English even when the prose inside them is written in
-the human's language. A record whose headings were translated cannot be compared with one whose
-were not, which is the whole reason these shapes are fixed.
+**The on-disk record is English in full** — headings and prose alike. These four files are
+committed with the change and ship in the pull request, which makes them repository documentation
+and puts them under the language rule in `AGENTS.md`. Translate the version shown to the human in
+conversation, not the version written to disk. Where a project declares documentation-language
+exceptions, it declares them in `AGENTS.md` and this yields to them.
+
+The headings never change in any case. A record whose headings were translated cannot be compared
+with one whose were not, which is the whole reason these shapes are fixed.
 
 ## Requirements analysis
 

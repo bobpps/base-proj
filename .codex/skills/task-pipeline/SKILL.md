@@ -59,17 +59,30 @@ shape `checkpoint-formats.md` fixes.
 
 **Phases 1–4 — read-only.** Read context, extract requirements, run the four-role debate as
 concurrent subagents briefed from `subagent-briefs.md`, print the gate if one is triggered, then
-publish the implementation plan and wait for approval. For a Risky run wait for approval even when
-nothing looks ambiguous: the human is approving the risk, not resolving a question. For an
-Analysis-only run, publish the plan and stop.
+publish the implementation plan.
 
-**Phase 5 — the worktree.** After approval and before the first edit:
+Who approves that plan depends on the run, per phase 4 of `checkpoints.md`:
+
+- **Risky, or a run the human asked to be interactive** — print the approval block and wait. For
+  Risky this holds even when nothing looks ambiguous: the human is approving the risk, not
+  resolving a question.
+- **Normal and Small** — the run approves its own plan and proceeds. Waiting for an approval the
+  contract does not ask for is what turns an autonomous pipeline into a supervised one.
+- **Analysis-only** — publish the plan and stop.
+
+**Phase 5 — the worktree.** After approval and before the first edit, with the root and branch
+pattern from `AGENTS.md`. `-b` means *create a new branch* and fails on one that already exists,
+so the form depends on which case this is:
 
 ```sh
+# a branch this run derived, which does not exist yet
 git worktree add <worktree-root>/<branch> -b <branch> <base-branch>
+
+# a branch that already exists, locally or on the remote
+git worktree add <worktree-root>/<branch> <branch>
 ```
 
-with the root and branch pattern from `AGENTS.md`. Run every subsequent command with that path
+Run every subsequent command with that path
 explicitly — there is no session-level move into it here, so the path is threaded by hand and a
 forgotten one writes into the main workspace.
 

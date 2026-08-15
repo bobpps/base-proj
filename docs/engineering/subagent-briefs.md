@@ -100,10 +100,18 @@ one message. Afterwards, compare `git status --porcelain` against the recording.
 
 | Pass | Agent | Notes |
 | --- | --- | --- |
-| Correctness | `pr-review-toolkit:code-reviewer` | Tell it which diff to focus on; by default it reviews unstaged changes, which is wrong here because the work may already be staged. Where it scores findings by confidence, map the top band to blocking or high and treat the bottom band as a nit unless the evidence is concrete. |
+| Correctness | `pr-review-toolkit:code-reviewer` | Tell it which diff to focus on; by default it reviews unstaged changes, which is wrong here because the work may already be staged. |
 | Error handling | `pr-review-toolkit:silent-failure-hunter` | Add to the correctness pass whenever the diff touches catch blocks, fallbacks, retries, or job error states. |
 | Test coverage | `pr-review-toolkit:pr-test-analyzer` | Give it the diff and the proving commands from `AGENTS.md`. |
 | Type design | `pr-review-toolkit:type-design-analyzer` | Optional. Worth running when the diff introduces domain types or contract shapes shared across package boundaries. |
+
+**A confidence score is not a severity.** Where a reviewer reports how sure it is, keep that
+separate and assign severity from the definitions in `checkpoints.md`. Confidence measures
+evidentiary certainty; severity measures impact, and the two move independently — a highly
+confident typo is still a nit, and an uncertain authorization bypass is still potentially
+blocking. Confidence governs what happens *before* the finding is published: a low-confidence one
+gets verified rather than demoted, and whatever survives verification takes the severity its
+impact earns.
 
 **Not used: any reviewer that rewrites code.** A simplifier that edits rather than reports applies
 changes nobody adjudicated, and in this pipeline no change lands before its finding has been

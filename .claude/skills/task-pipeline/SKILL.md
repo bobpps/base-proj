@@ -105,10 +105,17 @@ rather than by intention, and phase 4 gets a native approval gate.
   rules out. This edition needs that reminder more than the Codex one: `AskUserQuestion` leaves
   nothing on the page, so an unrecorded decision survives only as long as the conversation.
 
-- **Phase 4** — call `ExitPlanMode` with the plan to request approval. For Risky runs this
-  approval is mandatory even when nothing looks ambiguous: the human is approving the risk, not
-  resolving a question. For an Analysis-only run, publish the plan and stop **without** exiting
-  plan mode.
+- **Phase 4** — call `ExitPlanMode` with the plan. That call is how the session leaves read-only
+  mode; what it *means* depends on the run, per phase 4 of `checkpoints.md`:
+
+  - **Risky, or `--interactive`** — a real gate. Wait for a human answer before the first edit.
+    For Risky this holds even when nothing looks ambiguous: the human is approving the risk, not
+    resolving a question.
+  - **Normal and Small, autonomous** — the transition out of read-only, not an open question. The
+    contract has the run approve its own plan here, and that is what makes the default autonomous.
+    Do not solicit a decision the contract does not ask for; a pipeline that stops on every
+    ordinary task is a supervised one wearing an autonomous label.
+  - **Analysis-only** — publish the plan and stop **without** exiting plan mode.
 
 Nothing is written to `tasks/<task>/` in these phases. The worktree does not exist yet, and plan
 mode is read-only.
@@ -119,10 +126,16 @@ After approval and before the first edit:
 
 1. Derive the branch name from the task using the pattern in `AGENTS.md`. Never the default
    branch.
-2. Create the worktree and branch together, under the worktree root `AGENTS.md` names:
+2. Create the worktree under the root `AGENTS.md` names. Which form depends on whether the branch
+   already exists — `-b` means *create a new branch* and fails outright when one is already there,
+   which is a live case because this skill accepts an existing branch name as its argument:
 
    ```sh
+   # a branch this run derived, which does not exist yet
    git worktree add <worktree-root>/<branch> -b <branch> <base-branch>
+
+   # a branch that already exists, locally or on the remote
+   git worktree add <worktree-root>/<branch> <branch>
    ```
 
 3. Move the session into it with `EnterWorktree`, passing `path:`, so every later command runs
