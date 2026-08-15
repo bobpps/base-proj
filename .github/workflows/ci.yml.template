@@ -92,6 +92,12 @@ jobs:
       - name: Placeholder scan
         run: bash scripts/placeholders.test.sh
 
+      # Compares the placeholders the template carries against the interview's writing map. Five
+      # review rounds each found a different value that no question produced, one at a time; two
+      # lists checked against each other close the class.
+      - name: Placeholder coverage
+        run: bash scripts/placeholder-coverage.test.sh
+
       - name: Type correctness
         run: "{{CMD_TYPECHECK}}"
 

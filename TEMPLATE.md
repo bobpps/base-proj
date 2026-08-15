@@ -44,6 +44,7 @@ is to delete this file.
 | `scripts/worktree-setup.sh` | The worktree procedure every task run uses, with `worktree-setup.test.sh` proving it. Needs only bash and git. |
 | `scripts/review-snapshot.sh` | Fingerprints the tree around the review fan-out, so a reviewer that edited instead of advising is caught rather than trusted. `review-snapshot.test.sh` proves it. |
 | `scripts/placeholders.sh` | Lists the template values still unfilled, without mistaking a GitHub Actions expression for one. `placeholders.test.sh` proves it. |
+| `scripts/placeholder-coverage.test.sh` | Fails when the template carries a value the interview has no question for. Runs against the map in the `init-project` skill. |
 | `scripts/doctrine-checksum.sh` | Checksums `docs/engineering/`, so the claim that `/init-project` never reaches the doctrine is measured rather than intended. `doctrine-checksum.test.sh` proves it. |
 | `.github/workflows/ci.yml.template` | The structural half of CI — concurrency, permissions, the tracked-environment-file guard — with the commands left blank. Inert until `/init-project` renames it to `ci.yml`, because GitHub runs `*.yml` and would fail on the placeholders. |
 | `docs/decisions/0000-template.md` | The decision-record format. |

@@ -14,12 +14,70 @@ Nothing here is written until the interview finishes and the human has accepted 
 | `README.md` | 1, 2, 6, 8 |
 | `.github/workflows/ci.yml` | 2, 3.2, 6 — **renamed** from `ci.yml.template` |
 | package manifest — `package.json`, or `*.csproj` and `global.json` | 2 |
-| `.nvmrc` or `global.json` | 2 |
+| `.nvmrc` or `global.json` | 2.5 |
 | `.claude/settings.json` | 3.1 (tracker plugin), 5 |
 | `.mcp.json` | 3.1, when the tracker needs a server |
+| `.gitignore` | 3.6, whose value it carries too |
 | `docs/decisions/<next>-stack-and-validation.md` | 2, 6, plus the base-template stamp |
 | `docs/decisions/<next+1>-architecture-boundaries.md` | 8, when it was answered |
-| `TEMPLATE.md` | deleted, last |
+| `TEMPLATE.md` | deleted, before the verification |
+
+## Every placeholder, and what answers it
+
+**This table is checked mechanically.** `scripts/placeholder-coverage.test.sh` extracts every
+`{{VALUE}}` the template carries and fails if one of them is not named here. That check exists
+because five separate review rounds each found a different placeholder that no question produced —
+`SETUP_COMMANDS`, `CMD_FORMAT`, `CMD_SUPPORTING`, `SCOPE`, the runtime version — and each was
+fixed on its own while the next was still waiting. The question set was written from a
+specification rather than from the values it has to answer, and one list checked against the other
+closes the whole class.
+
+Adding a placeholder to a template file therefore means adding a row here and a question that
+fills it. The check will say so.
+
+| Placeholder | Where | Answered by |
+| --- | --- | --- |
+| `PROJECT_NAME` | `AGENTS.md`, `README.md` | 1.1 |
+| `PROJECT_ONE_LINE` | `AGENTS.md`, `README.md` | 1.2 |
+| `PROJECT_DESCRIPTION` | `README.md` | 1.5 |
+| `PROJECT_CONTEXT` | `AGENTS.md` | 1.5, condensed to what an agent needs before touching code |
+| `USER_LANGUAGE` | `AGENTS.md` | 1.3 |
+| `DOC_LANGUAGE_EXCEPTIONS` | `AGENTS.md` | 1.4 — empty when documents follow 1.3 |
+| `CMD_TYPECHECK` `CMD_LINT` `CMD_FORMAT_CHECK` `CMD_TEST` `CMD_TEST_ONE` `CMD_BUILD` `CMD_SMOKE` `CMD_INTEGRATION` | `AGENTS.md`, `README.md` | 2.4, the eight roles |
+| `CMD_FORMAT` | `README.md` | 2.4 — formatting in **write** mode, not the check |
+| `CMD_SUPPORTING` | `AGENTS.md` | 2.4 |
+| `SETUP_COMMANDS` | `README.md` | 2.4 |
+| `CI_SETUP_STEPS` | `ci.yml` | 2.1 and 2.5, from the profile — **both jobs** |
+| `TRACKER` | `AGENTS.md` | 3.1 |
+| `BASE_BRANCH` | `AGENTS.md`, `ci.yml` | 3.2 |
+| `REMOTE` | `AGENTS.md` | 3.3, or `derived` |
+| `BRANCH_PATTERN` | `AGENTS.md` | 3.4 |
+| `COMMIT_CONVENTION` | `AGENTS.md` | 3.5 |
+| `WORKTREE_ROOT` | `AGENTS.md`, `.gitignore` | 3.6 |
+| `PR_COMMAND` | `AGENTS.md` | 3.1, from the platform |
+| `REVIEWER` | `AGENTS.md` | 4.1 |
+| `REVIEW_REQUEST` | `AGENTS.md` | 4.2 |
+| `VALIDATION_LINE` | `AGENTS.md`, `README.md` | 6.1 |
+| `CI_INTEGRATION_JOB_NAME` | `ci.yml` | 6.1 — the job is deleted when nothing is CI-only |
+| `RISK_ADDITIONS` | `AGENTS.md` | 7 |
+| `SECURITY_ADDITIONS` | `AGENTS.md` | 7, the security half |
+| `ARCHITECTURE_BOUNDARIES` | `AGENTS.md` | 8.2 |
+| `ARCHITECTURE_INVARIANTS` | `AGENTS.md` | 8.3 |
+| `ARCHITECTURE_SUMMARY` | `README.md` | 8.2, in prose for a human reader |
+| `SCOPE` | `README.md` | 8.1 |
+| `OUT_OF_SCOPE` | `AGENTS.md`, `README.md` | 8.4 |
+| `WORKING_STYLE_ADDITIONS` | `CLAUDE.md` | 5, or empty |
+| `PLACEHOLDER` | `AGENTS.md`, `CLAUDE.md` | **not a value** — see below |
+
+### The template notes are deleted, not filled
+
+`AGENTS.md`, `CLAUDE.md`, and `README.md` each open with a note saying the file is still the
+template and that `/init-project` fills it in. Those notes are true of a template and false of a
+configured project, and each carries a literal `{{PLACEHOLDER}}` into a file that is then supposed
+to be free of them.
+
+Delete all three, the same way the workflow's header comment goes at the rename. A stale
+instruction is worse than no instruction: it describes a state the repository has left.
 
 ## The CI workflow is renamed, not just filled
 
@@ -46,10 +104,16 @@ purpose.
 
 **Two steps are conditional on answers, and both are deletions rather than edits.**
 
-*The `Artifact smoke` step goes when question 2.3 says the project is a library.* `AGENTS.md`
-records that role as `not applicable — library`, which is a sentence rather than a command: put it
-in `run:` and the shell fails, leave the placeholder and the verification fails. There is no third
-option, so the step is removed.
+*A step whose role has no command is deleted.* This covers the library case — question 2.3 says
+there is no runnable artifact, so `AGENTS.md` records the smoke role as `not applicable — library` —
+and it covers every role the Other profile left blank, recorded as one this project cannot prove.
+The recorded text is a sentence rather than a command in both cases: put it in `run:` and the shell
+fails, leave the placeholder and the verification fails. There is no third option, so the step goes.
+
+State the rule that way rather than naming the smoke step, which is how this was written first. The
+smoke step is simply the case that came up; the rule is that **a workflow step exists for a role
+this project can prove, and for no other.** A step that runs an explanation is worse than an absent
+step, because it fails in a way that looks like the code.
 
 *The `integration` job* is guarded by `if: false`. Block 6 either enables it or the job is deleted
 entirely — leaving a disabled job in place is a third state nobody reads correctly.

@@ -28,6 +28,11 @@ puts a rule in the repository for a year gets the full card.
 | 1.2 | One line describing what it is | free text | — required |
 | 1.3 | Language the agent replies in | choice | Russian |
 | 1.4 | Language of human-facing documents — README, QA package | choice: same as 1.3 · English | same as 1.3 |
+| 1.5 | A paragraph: what this is, for whom, and what problem it removes | free text | — required |
+
+1.5 is not 1.2 at greater length. The one line is what somebody reads in a list of repositories;
+the paragraph is what an agent reads before touching code, and it goes into `README.md` in full and
+into `AGENTS.md` condensed to the part that constrains a change.
 
 1.2 has no default and cannot be skipped. It becomes the first line of `README.md` and the
 one-line description in `AGENTS.md`, and it is the sentence every later agent reads first to decide
@@ -48,7 +53,14 @@ the human discover it after answering.
 | 2.1 | Stack profile | choice: TypeScript/Node · .NET · other | derived if a manifest exists, else asked |
 | 2.2 | Layout | choice: single package · workspaces / solution with several projects | single |
 | 2.3 | Does the project produce a runnable artifact? | yes/no | yes |
-| 2.4 | The eight proving commands | confirm-or-edit, one screen | from the profile |
+| 2.4 | The eight proving commands, plus setup, format-write, and supporting | confirm-or-edit, one screen | from the profile |
+| 2.5 | Runtime version to pin | confirm a derived value | `node --version` or `dotnet --version` on this machine |
+
+2.5 exists because the pin is a file — `.nvmrc`, `global.json` — and CI reads it through
+`node-version-file` or `global-json-file` rather than a literal. There is nothing to derive it from
+in a fresh project: no manifest exists yet. Asking with the machine's own version pre-filled is
+honest; writing an empty pin, or inventing a version, gives CI a setup step that fails on a
+repository nobody has run yet.
 
 **2.4 shows all eight at once.** They are one decision — the project's proof surface — and
 splitting them into eight prompts is how an interview becomes a form.
@@ -131,9 +143,15 @@ One multiple-choice question. Defaults come from the template's own decisions an
 | Contour | Default | What turning it on costs |
 | --- | --- | --- |
 | Codex edition and generated `.agents/` | **on** | every rule expressed twice, in two harness vocabularies |
-| QA package for a human tester | **on** | documents that only pay off if somebody reads them |
+| QA package for a human tester | **unavailable** | — see below |
 | Cursor rules | off | a third copy of the same rules, which then drifts |
 | Vendor plugin and user skills into `.agents/` | off | one machine's installed set committed to the repository, ageing unnoticed |
+
+**The QA package cannot be turned on yet.** The `qa-architect` skill that would produce it is not
+built — `CLAUDE.md` says so per row — and nothing in the writing map creates those documents. An
+offered contour that no operation can honour produces a repository whose skill table names a file
+that is not there, which is the failure that table's third column exists to prevent. Offer it again
+when the skill exists.
 
 **Two things are not on this list, and both were considered for it.**
 
@@ -192,9 +210,13 @@ a decision record and a change to `checkpoints.md` — say so and leave the list
 
 | # | Question | Type |
 | --- | --- | --- |
-| 8.1 | The layers a change can belong to, and what each owns | free text, or "not yet" |
-| 8.2 | Invariants that hold regardless of layer | multi-select, prefilled with the defaults below |
-| 8.3 | What is explicitly out of scope | free text, or "not yet" |
+| 8.1 | What this project **does** — the scope it commits to | free text, or "not yet" |
+| 8.2 | The layers a change can belong to, and what each owns | free text, or "not yet" |
+| 8.3 | Invariants that hold regardless of layer | multi-select, prefilled with the defaults below |
+| 8.4 | What is explicitly **out** of scope | free text, or "not yet" |
+
+8.1 and 8.4 are one pair and are asked together. `README.md` carries both, and out-of-scope read
+without in-scope is a list of refusals with nothing to refuse against.
 
 **This is the block the skill cannot help with, and it should say so.** The boundaries come from
 understanding a product that, at the moment this question is asked, does not exist yet. **"Not yet"
