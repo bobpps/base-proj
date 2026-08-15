@@ -1,0 +1,181 @@
+# Subagent briefs
+
+Read before phase 2 (the requirements debate) and again before phase 7 (the review fan-out).
+
+A subagent starts with an empty context. It cannot see this conversation, the task that was read,
+the decisions a human made at a gate, or the mode the run was classified as. Whatever is left out
+of the brief, it will either invent or go looking for — and an agent that reconstructs the task
+from scratch usually reconstructs a slightly different task, which produces a debate about
+nothing.
+
+Everything here is English on purpose. These are engineering instructions, not user-facing text,
+and the specialist reviewers they compose with are written in English. Translate only when
+reporting the outcome to the human.
+
+## The shape of a brief
+
+Five parts, every time:
+
+1. **Role and single question.** One role, one verifiable deliverable. Bundling "assess the
+   architecture and also check the tests" produces an agent that does neither well.
+2. **The task, verbatim.** Paste the issue title and body, or the plain description. Do not
+   summarize — a summary already carries the conclusions the main session reached, and the entire
+   value of a separate agent is that it has not reached them.
+3. **What to read.** Concrete paths: `README.md`, `AGENTS.md`, the applicable `CLAUDE.md`, every
+   file in `docs/decisions/`, and the implementation files already identified. Recorded decisions
+   matter most — an agent that has not read them will "discover" questions the human answered
+   months ago.
+4. **Boundaries.** Read-only for every role in this pipeline: investigate, report, change nothing.
+   State it explicitly. An agent with edit tools that finds a bug will fix it unless told not to.
+5. **Return format.** Say what the final message must contain. Its final text *is* the return
+   value, not a message to a human, so ask for the fields that will be pasted into the checkpoint.
+
+## Phase 2 — the requirements debate
+
+Launch all four in a single message so they run concurrently, and brief each **without telling it
+what the others think**. Independence is the entire value: four sections written by one head would
+agree with each other, and their agreement would mean nothing. Real disagreement between
+independently briefed agents is evidence that the requirements are ambiguous, which is exactly
+what the phase 3 gate needs to know.
+
+Use `general-purpose` unless a role obviously matches an installed specialist.
+
+### Shared preamble
+
+```
+You are reviewing a proposed task in the <project> repository before any code is written.
+
+Task under discussion:
+<issue title and body verbatim, or the plain task description>
+
+Repository context to read first:
+- README.md — what the product is, its current scope, and what is out of scope
+- AGENTS.md — architecture boundaries, invariants, validation expectations, risk classification
+- CLAUDE.md — harness-specific working rules
+- docs/engineering/ — the engineering doctrine this project is judged against
+- every file in docs/decisions/ — recorded decisions with their reasoning
+- <implementation files relevant to the task>
+
+This is a read-only analysis. Do not edit, create, stage, or commit any file.
+
+Ground every claim in a quotation from the task, a file path with a line reference, or a clearly
+labeled inference. An unsupported assertion is worse than no assertion — it will be treated as
+evidence at a human decision gate.
+```
+
+### The four role questions
+
+Append exactly one to the preamble. Each ends by naming what to return, because the return is what
+gets pasted into the checkpoint.
+
+- **Scope skeptic** — "Is this task necessary now, and is the proposed size right for this
+  project's current stage? Name anything that is polish rather than function, anything that could
+  be cut without losing an acceptance criterion, and anything the task asks for that the scope in
+  `README.md` and `AGENTS.md` excludes. Return: a verdict on necessity, a list of cuttable items
+  with reasons, and any scope conflict found."
+
+- **Architect** — "Which layer owns this change, per the architecture boundaries in `AGENTS.md`?
+  Check it against those boundaries and against the invariants listed there. Return: the owning
+  layer, any boundary this would cross, any coupling it would introduce, and whether an existing
+  pattern in the codebase already solves it."
+
+- **Security reviewer** — "What are the security and privacy consequences? Cover secrets and
+  credential storage, authentication, authorization and access policies, database schema and
+  migrations, storage policies, public error surfaces, and the handling of user data. Return: each
+  concern with its severity, the evidence for it, and whether it needs a human decision before
+  implementation."
+
+- **Implementation reviewer** — "What is the smallest sound implementation? Name the files that
+  would change, the approach, and the specific proving commands and manual smoke test that would
+  demonstrate it works. Note which checks can run on a development machine and which need CI, per
+  the validation line in `AGENTS.md`. Return: the approach, the file list, the validation plan,
+  and the risks in it."
+
+## Phase 7 — the review fan-out
+
+Before launching, record `git status --porcelain` and the diff under review. Launch the passes in
+one message. Afterwards, compare `git status --porcelain` against the recording.
+
+### Passes with an installed specialist
+
+| Pass | Agent | Notes |
+| --- | --- | --- |
+| Correctness | `pr-review-toolkit:code-reviewer` | Tell it which diff to focus on; by default it reviews unstaged changes, which is wrong here because the work may already be staged. Where it scores findings by confidence, map the top band to blocking or high and treat the bottom band as a nit unless the evidence is concrete. |
+| Error handling | `pr-review-toolkit:silent-failure-hunter` | Add to the correctness pass whenever the diff touches catch blocks, fallbacks, retries, or job error states. |
+| Test coverage | `pr-review-toolkit:pr-test-analyzer` | Give it the diff and the proving commands from `AGENTS.md`. |
+| Type design | `pr-review-toolkit:type-design-analyzer` | Optional. Worth running when the diff introduces domain types or contract shapes shared across package boundaries. |
+
+**Not used: any reviewer that rewrites code.** A simplifier that edits rather than reports applies
+changes nobody adjudicated, and in this pipeline no change lands before its finding has been
+accepted.
+
+For a Risky run, use the `security-review` skill for the security pass where it is installed: it
+reviews the pending changes on the branch, which is exactly the scope wanted, and it is maintained
+outside this pipeline.
+
+### Passes briefed by hand
+
+```
+You are reviewing a completed change in the <project> repository before a pull request opens.
+
+Task the change implements:
+<issue title and body verbatim, or the plain task description>
+
+Scope of the change:
+- Branch: <branch>
+- Worktree: <path>
+- Review this diff: <the command that produces it>
+
+Read for context:
+- AGENTS.md — architecture boundaries, invariants, validation expectations
+- CLAUDE.md — harness working rules
+- docs/engineering/failure-axes.md — the five axes and their safe defaults
+- every file in docs/decisions/ — recorded decisions and their reasoning
+
+This is a read-only review. Do not edit, create, stage, or commit any file.
+
+Report only findings you can support with a file and line, a failing command, a violated
+requirement from the task, or a concrete execution path. If you find nothing, say "No findings" —
+that is a valid and useful result. Do not pad the report to look thorough.
+
+For each finding return: what is wrong, the evidence, the severity
+(blocking | high | medium | low | nit), and the smallest action that would resolve it.
+
+Your specific question:
+<one of the questions below>
+```
+
+- **Simplification** — "Is there a materially simpler implementation of the same behaviour, using
+  something that already exists in this codebase? Ignore stylistic preference and speculative
+  abstraction."
+- **Architecture** — "Does this change respect the architecture boundaries and the invariants in
+  `AGENTS.md`? Check each invariant listed there against the diff, and say which ones the diff
+  does not touch rather than skipping them silently."
+- **Scope** — "Does this change stay inside what the task authorized? Flag anything belonging to
+  the out-of-scope list in `README.md` and `AGENTS.md`, and any unrelated refactoring or cleanup
+  that arrived alongside the task."
+- **Security**, for a Normal run where `security-review` is not used — "Does this change leak or
+  weaken anything? Check for hardcoded secrets, a privileged credential reachable from code that
+  should not hold one, cross-user data exposure, missing or bypassed access control, publicly
+  reachable private data, internal errors surfacing through public error responses, and
+  idempotency gaps that would let a retry duplicate or corrupt data."
+
+### The failure-axes pass
+
+Brief one agent with `docs/engineering/failure-axes.md` and the diff, asking a single question:
+**for each read or write path this diff introduces or touches, does the code's behaviour on the
+five axes match the rule the plan stated?** A path whose behaviour contradicts its own plan is a
+finding; a path the plan never mentioned is a bigger one, because it means the plan's coverage was
+incomplete and whatever the code does there is accidental rather than chosen.
+
+## Turning returns into checkpoints
+
+- **Deduplicate before publishing.** Independent reviewers frequently report one problem four
+  times, and four finding blocks for one defect inflate the apparent severity of the change.
+- **Keep the reviewer's evidence, not its prose.** A finding citing no file, line, command, or
+  execution path is a hypothesis about a hypothesis. Check it before publishing, and drop it if it
+  does not survive.
+- **A returned `null` means the agent died or was skipped, not that it found nothing.** Say which
+  passes did not complete rather than reporting a clean review that was never received.
+- **Never paste a subagent's judgement into a gate question as established fact.** The gate exists
+  precisely because the question is open.

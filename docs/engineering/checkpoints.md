@@ -266,6 +266,9 @@ fixed; the contents are yours to shape.**
 | `validation.md` | Commands run, outcomes, and where each ran | end of phase 6, updated with the CI outcome once it exists |
 | `review.md` | Every finding with its id, the adjudication of each, one section per review round | phases 7–9 and 11 |
 
+**The shapes are in `docs/engineering/checkpoint-formats.md`**, read by every edition, so two runs
+produce records that can be compared with each other.
+
 Write each file at the end of the phase that owns it, not at the end of the run: an interrupted
 run should leave a record that is true as far as it goes.
 
