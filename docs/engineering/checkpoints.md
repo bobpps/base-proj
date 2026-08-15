@@ -140,10 +140,13 @@ Each has an exit condition. The path between them is open.
 11. **Converge the review loop.** Per `review-loop.md`. *Exit: the round is clean against the
     current head, or every open finding is settled to a status that asks for no change here.*
 
-12. **Report.** What was implemented, validation with locations, the adjudication outcome, the
-    review verdict and how many rounds, the pull-request link, follow-ups, and known
-    limitations stated without implying they were completed. *Exit: the report is published; if
-    blocked, the report says which gate is unresolved and what decision is needed instead.*
+12. **Report**, then write the retrospective. The report covers what was implemented, validation
+    with locations, the adjudication outcome, the review verdict and how many rounds, the
+    pull-request link, follow-ups, and known limitations stated without implying they were
+    completed. The retrospective is non-blocking and is **committed and pushed by this phase**,
+    under the bookkeeping exemption in `review-loop.md`. *Exit: the report is published and the
+    retrospective is either on the branch or reported as having failed; if blocked, the report
+    says which gate is unresolved and what decision is needed instead.*
 
 ## The four-role debate
 
@@ -278,6 +281,12 @@ A fifth name is reserved and belongs to nobody here: `retrospective.md`, written
 the `retrospective` skill. It is a record of how the *run* went rather than of what the change did,
 it is non-blocking, and a task folder without one is a complete record of the change. Keep the two
 apart — a retrospective that edits the four files is editing its own evidence.
+
+**Its commit belongs to phase 12, not to the skill that writes it.** Side effects belong to the
+main session, and by the time the file exists the branch has already been pushed — so a
+retrospective nobody commits stays in a worktree that is about to be removed. That is not merely a
+lost file: the pass that reads these reports finds them by path and orders them by commit date, so
+an uncommitted report is invisible to it rather than merely late.
 
 Write each file at the end of the phase that owns it, not at the end of the run: an interrupted
 run should leave a record that is true as far as it goes.

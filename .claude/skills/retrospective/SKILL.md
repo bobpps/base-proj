@@ -121,6 +121,15 @@ Padding it with hypotheticals teaches the next reader that this document is deco
 One file: `tasks/<task-id>/retrospective.md`. It is written by this skill and this skill only, and
 it is the fifth file in a task folder whose other four belong to the run itself.
 
+**Say the path back to the caller, and say the file is uncommitted.** This skill does not commit —
+side effects belong to the session that owns the phase, per `checkpoints.md` — and phase 12 stages
+and pushes it. That handover is worth stating out loud in the return, because the failure it
+prevents is silent: by the time this runs, phase 10 has already published the branch, so a report
+nobody commits stays in a worktree that is about to be removed. `lessons` finds reports by path and
+orders them by commit date, which makes an uncommitted one invisible rather than merely late.
+
+A human who invoked this directly gets the same sentence and decides what to do with the file.
+
 ```markdown
 # Retrospective — <task-id>: <title>
 

@@ -137,7 +137,15 @@ listed="$(awk '/^## Which skill for which request/ { inside=1; next }
                  print substr($0, RSTART + 1, RLENGTH - 2)
                }' "$TABLE" | LC_ALL=C sort -u)"
 
-on_disk="$(skill_dirs .claude/skills | while read -r d; do [ -n "$d" ] && basename "$d"; done | LC_ALL=C sort -u)"
+# Live skills only. `writing-skills.md` says a replaced skill keeps its directory and gains a
+# `superseded-by:` marker, and a retired skill has no business in a table headed "which skill for
+# which request" — so counting the directory here would fail a repository that retired one exactly
+# as the doctrine tells it to.
+on_disk="$(skill_dirs .claude/skills | while read -r d; do
+  [ -n "$d" ] || continue
+  is_superseded "$d/SKILL.md" && continue
+  basename "$d"
+done | LC_ALL=C sort -u)"
 
 if [ -n "$listed" ]; then
   pass "the skill table lists skills ($(echo "$listed" | wc -l))"
@@ -149,22 +157,46 @@ missing_dir="$(comm -23 <(echo "$listed") <(echo "$on_disk") | tr '\n' ' ')"
 missing_row="$(comm -13 <(echo "$listed") <(echo "$on_disk") | tr '\n' ' ')"
 
 if [ -z "${missing_dir// /}" ]; then
-  pass "every skill in the table exists under .claude/skills"
+  pass "every skill in the table is present and live under .claude/skills"
 else
-  fail "every skill in the table exists under .claude/skills" "listed but absent: $missing_dir"
+  fail "every skill in the table is present and live under .claude/skills" \
+       "listed but absent or retired: $missing_dir"
 fi
 
 if [ -z "${missing_row// /}" ]; then
-  pass "every skill under .claude/skills has a row in the table"
+  pass "every live skill under .claude/skills has a row in the table"
 else
-  fail "every skill under .claude/skills has a row in the table" "on disk but unlisted: $missing_row"
+  fail "every live skill under .claude/skills has a row in the table" "on disk but unlisted: $missing_row"
 fi
 
 # ---------------------------------------------------------------------------- .agents is generated
 
 # The generator copies whole directories: `.codex` wins where both exist, `.claude` otherwise, and a
-# skill carrying `superseded-by:` is skipped. So `.agents` is comparable byte for byte, and any
-# difference is either a hand edit or a source that moved on without regeneration.
+# skill is skipped when it carries `superseded-by:` or appears in the generator's IGNORE map. So
+# `.agents` is comparable byte for byte, and any difference is either a hand edit or a source that
+# moved on without regeneration.
+#
+# IGNORE is read out of the generator rather than restated here. Restating it would make this check
+# disagree with the tool it is checking the moment somebody adds an entry — it would report the
+# skill as missing from `.agents/` while the generator was correctly leaving it out.
+GENERATOR="$ROOT/scripts/copy-skills-to-agents.mjs"
+ignore_block="$(awk '/^const IGNORE = \{/ { inside=1; found=1; next }
+                     inside && /^\};/    { inside=0; next }
+                     inside              { print }
+                     END                 { exit found ? 0 : 1 }' "$GENERATOR")"
+if [ $? -eq 0 ]; then
+  pass "the generator's IGNORE map is readable"
+else
+  # Loud rather than empty. An unreadable map silently becomes "nothing is ignored", which is the
+  # same answer as a correctly empty map and would hide a renamed constant forever.
+  fail "the generator's IGNORE map is readable" "no 'const IGNORE = {' block in ${GENERATOR#"$ROOT"/}"
+fi
+
+ignored="$(printf '%s\n' "$ignore_block" \
+           | sed 's://.*::' \
+           | grep -oE "^[[:space:]]*('[^']+'|\"[^\"]+\")" \
+           | tr -d " '\"" )"
+
 drift=""
 expected=""
 for tree in .codex/skills .claude/skills; do
@@ -172,6 +204,7 @@ for tree in .codex/skills .claude/skills; do
     [ -n "$dir" ] || continue
     name="$(basename "$dir")"
     case " $expected " in *" $name "*) continue ;; esac   # a higher-priority source already claimed it
+    case " $(echo $ignored) " in *" $name "*) continue ;; esac
     is_superseded "$dir/SKILL.md" && continue
     expected="$expected $name"
     if [ ! -d "$ROOT/.agents/skills/$name" ]; then

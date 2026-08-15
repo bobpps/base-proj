@@ -134,6 +134,13 @@ Where it names none, say so and go to phase 12; an absent reviewer is not a clea
 **Phase 12 — report** in the `Done` shape, then run the retrospective. It is non-blocking: if it
 fails, say so in one line and finish anyway.
 
+Then ship it. The retrospective skill writes `tasks/<task>/retrospective.md` and does not commit —
+side effects are this session's. Stage that path alone, commit, and `git push <remote> <branch>` to
+the remote phase 5 recorded. Phase 10 already published the branch, so an uncommitted report never
+leaves the worktree, and the pass that reads these reports later locates them by path and sorts
+them by commit date: without a commit it is not late, it is absent. The push is bookkeeping under
+`review-loop.md` and starts no new review round — wait for CI on the new head and report it.
+
 ## What must never happen
 
 - Editing, committing, or pushing the default branch.
