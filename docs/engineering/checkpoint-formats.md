@@ -259,8 +259,8 @@ One block per finding.
 B1 | H1 | M1 | L1 | N1
 
 ### Reviewer
-Correctness | Simplification | Security | Architecture | Scope | Test coverage | Failure axes
-| Automated reviewer | Human reviewer
+Correctness | Error handling | Test coverage | Type design | Security | Simplification |
+Architecture | Scope | Failure axes | Automated reviewer | Human reviewer
 
 ### Finding
 ...
@@ -284,6 +284,12 @@ When a pass has nothing to report:
 ### <Reviewer name>
 No findings.
 ```
+
+The reviewer values are the passes `subagent-briefs.md` defines, plus the two external sources.
+**The two lists change together.** A pass defined there with no value here leaves the run choosing
+between mislabelling the finding as a neighbouring lens and breaking the format that makes these
+records comparable — and it will choose one of them silently, because neither looks like an error
+at the moment it happens.
 
 ## Review finding adjudication
 
@@ -378,7 +384,7 @@ pull request triggered.
 clean | pending | degraded | findings
 
 ### Findings
-- `<id>` `<signal>` `<path or check name>` — ...
+- `<id>` `<severity now>` `<signal>` `<path or check name>` — ...
 
 ### Adjudication
 - `<id>` — accepted | rejected | deferred | needs_human | document_only, one line of reason.
@@ -398,8 +404,18 @@ rejected/deferred/document_only and listed in the pull-request body | Stopped: h
 
 `<signal>` is whatever the source actually supplied — a priority badge, a failing check's name, a
 review state, or `question` for a human comment. Do not invent a badge for a signal that carries
-none: this field records where the finding came from, and the severity it was adjudicated to lives
-in its id.
+none: this field records where the finding came from, and nothing else.
+
+`<severity now>` is what the finding is worth at this round. **It is recorded because the id does
+not carry it.** The letter in an id fixes the severity the finding had when it was raised, and
+`checkpoints.md` keeps that id stable for the whole run so rounds can address findings by name —
+so a finding raised as `M4` and promoted twice is still `M4`, now blocking. Reading severity out of
+the id would report every promotion as if it had never happened, which is the one thing these
+records exist to make visible.
+
+Write the promotion in **Loop state** as well, naming the round it fired in. And do not rename the
+finding to match: `H1 (escalated from M4)` is a second id for one finding, and the next round's
+`H1` then means two different things depending on who is reading.
 
 ## Done
 

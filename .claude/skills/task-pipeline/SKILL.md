@@ -84,16 +84,23 @@ silence.
 
 ## Phases 1–4: inside plan mode
 
-Enter plan mode with `EnterPlanMode` before reading — **on every run, in every mode.** An
+Enter plan mode with `EnterPlanMode` before reading — **on every fresh run, in every mode.** An
 Analysis-only run enters and never leaves.
 
 Two things follow, and both are the point: the read-only phases become read-only **by
 construction** rather than by intention, and phase 4 gets a native transition out of them.
 
-The uniformity is deliberate. Entering only for the larger modes leaves a Small run reaching phase
-4 with no plan-mode session to exit, and a mode-dependent branch is precisely the thing that turns
-out to be wrong in the case nobody exercised. One extra tool call on a typo fix is cheaper than
-that branch.
+The uniformity across modes is deliberate. Entering only for the larger modes leaves a Small run
+reaching phase 4 with no plan-mode session to exit, and a mode-dependent branch is precisely the
+thing that turns out to be wrong in the case nobody exercised. One extra tool call on a typo fix is
+cheaper than that branch.
+
+**A resume that re-enters at phase 5 or later does not enter plan mode at all.** This is not the
+branch the paragraph above argues against: it does not turn on the mode, it turns on whether the
+run will ever reach the phase 4 that calls `ExitPlanMode`. A resume into phase 11 never does, and
+`ExitPlanMode` is the only way out — so entering would leave the session read-only for the whole
+of a phase whose entire job is to push fixes, update artifacts, and drive the loop to a verdict.
+Establish the first unmet phase first, per **Resuming** below, and enter only if it is 1–4.
 
 - **Phase 1** — read context. Delegate the wide search to an `Explore` subagent when the relevant
   code could be anywhere; it reads excerpts and returns locations, which is the shape of that
@@ -271,6 +278,10 @@ into someone's summary.
 Read whichever artifacts exist, reconcile them against the commit history, and re-enter at the
 first phase whose exit condition is unmet. No `plan.md` → phase 5 has not finished, whether or not
 a worktree exists. No `validation.md` → phase 6. An open pull request → phase 11, **not** done.
+
+Work that out **before** touching `EnterPlanMode`. Re-entering at phase 5 or later means the run
+never calls `ExitPlanMode`, so entering plan mode there would leave the session unable to do the
+one thing it resumed to do.
 
 ## What must never happen
 

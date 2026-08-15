@@ -148,3 +148,7 @@ fails, say so in one line and finish anyway.
 Read whichever artifacts exist, reconcile them against the commit history, and re-enter at the
 first phase whose exit condition is unmet. An open pull request means phase 11 has not converged —
 it does not mean the task is finished.
+
+A `plan.md` in the tree **is** the approval the write rule above refers to. A resume into phase 5
+or later is not held by that rule, and re-approving a plan that was already approved is not
+caution — it is a second gate the contract never asked for.
