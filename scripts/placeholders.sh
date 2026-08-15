@@ -61,7 +61,39 @@ if [ "${#PATHS[@]}" -eq 0 ]; then
     global.json
     .nvmrc
   )
+  # .NET puts its manifests wherever the solution puts them, so they are found rather than named.
+  # A generated `*.csproj` carrying an unanswered value would otherwise pass the scan and be
+  # reported as a finished run.
+  while IFS= read -r found; do
+    PATHS+=("${found#./}")
+  done < <(
+    cd "$REPO" && find . -name '*.csproj' \
+      -not -path './.git/*' -not -path './node_modules/*' 2>/dev/null
+  )
 fi
+
+# Removes each `${{ … }}` expression, shortest match first.
+#
+# The obvious `sed 's/\${{[^}]*}}//g'` stops at the first `}`, so it fails on an expression whose
+# body contains one — `${{ format('{0}', github.sha) }}` is valid and common. Making the pattern
+# greedy is worse: it would swallow a real placeholder sitting between two expressions on one line.
+# So walk the line, and for each opening take everything up to the first `}}` that follows it.
+strip_expressions() {
+  local s="$1" out="" head rest
+  while [ "${s#*\$\{\{}" != "$s" ]; do
+    head="${s%%\$\{\{*}"
+    rest="${s#*\$\{\{}"
+    out="$out$head"
+    if [ "${rest#*\}\}}" != "$rest" ]; then
+      s="${rest#*\}\}}"
+    else
+      # An opening with no closing: keep the remainder so nothing is silently discarded.
+      s="$rest"
+      break
+    fi
+  done
+  printf '%s' "$out$s"
+}
 
 todo=0
 unresolved=0
@@ -71,12 +103,15 @@ for rel in "${PATHS[@]}"; do
   [ -f "$f" ] || continue
 
   n=0
-  while IFS= read -r line; do
+  # `|| [ -n "$line" ]` catches a file whose last line has no trailing newline. Without it `read`
+  # returns non-zero on that line and the loop drops it, so a file ending in an unfilled value is
+  # reported as clean — which an editor produces without anyone deciding to.
+  while IFS= read -r line || [ -n "$line" ]; do
     n=$((n + 1))
 
     # `${{ … }}` belongs to GitHub Actions and to everything else that borrowed the syntax. It is
     # not an unfilled value, and a run that "cleared" it would be editing the workflow's logic.
-    stripped="$(printf '%s' "$line" | sed 's/\${{[^}]*}}//g')"
+    stripped="$(strip_expressions "$line")"
 
     # Count the deferred answers, then take them out of the line. Doing this in one step rather
     # than branching on the line as a whole is what stops `{{TODO}} and {{PROJECT_NAME}}` being

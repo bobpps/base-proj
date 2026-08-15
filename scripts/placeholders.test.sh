@@ -101,6 +101,44 @@ check "outside the list: not scanned by default" "0" "$(field unresolved)"
 run somewhere-else.md
 check "outside the list: scanned when named"     "1" "$(field unresolved)"
 
+# --- 10. a .NET manifest is scanned wherever the solution puts it ---------------------------------
+mkdir -p "$D/src/Api"
+printf '<Project><Version>{{PROJECT_VERSION}}</Version></Project>\n' > "$D/src/Api/Api.csproj"
+run
+check "csproj: found without being named" "1" "$(field unresolved)"
+rm -rf "$D/src"
+
+# --- 11. a final line with no trailing newline ----------------------------------------------------
+#
+# `read` returns non-zero on an unterminated last line, so the loop used to drop it and report a
+# file ending in an unfilled value as clean. Editors produce this without anyone deciding to.
+printf 'Boundaries: {{TODO}} and {{PROJECT_NAME}}' > "$D/AGENTS.md"   # deliberately no \n
+run
+check "unterminated last line: the value is counted" "1" "$(field unresolved)"
+check "unterminated last line: the marker too"       "1" "$(field todo)"
+
+# --- 12. an Actions expression whose body contains a brace ----------------------------------------
+#
+# `${{ format('{0}', …) }}` is valid and common. Stopping the strip at the first `}` left the
+# opening behind and reported the workflow as carrying an unfilled value.
+printf 'Boundaries: settled\n' > "$D/AGENTS.md"
+cat > "$D/.github/workflows/ci.yml" <<'YML'
+- run: echo ${{ format('{0}-{1}', github.sha, github.run_id) }}
+YML
+run
+check "expression with inner braces: not counted" "0" "$(field unresolved)"
+check "expression with inner braces: exit 0"      "0" "$RC"
+
+# --- 13. a real placeholder between two such expressions ------------------------------------------
+#
+# The greedy alternative would have swallowed this one along with everything between the first
+# opening and the last closing.
+cat > "$D/.github/workflows/ci.yml" <<'YML'
+- run: deploy ${{ format('{0}', github.sha) }} {{DEPLOY_ENV}} ${{ github.run_id }}
+YML
+run
+check "placeholder between expressions: still counted" "1" "$(field unresolved)"
+
 # --- 9. a flag whose value is missing -------------------------------------------------------------
 #
 # Reported as a hang, not as a wrong exit code: without `set -e` the failed `shift 2` left the loop
