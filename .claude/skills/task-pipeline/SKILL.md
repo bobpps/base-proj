@@ -165,7 +165,7 @@ Add `--remote <name>` when the **Remote** row in `AGENTS.md` names one instead o
 
 Exit 0 prints `worktree=`, `case=`, and `remote=`; carry all three into `implementation.md`. The
 remote matters past this phase: phase 10 pushes to it by name, and re-deriving it there would let
-git answer the question by its own defaults instead. Exit 10, 11, or 12 is
+git answer the question by its own defaults instead. Exit 10, 11, 12, or 13 is
 a **gate**: read `worktrees.md` for what each one means, ask through `AskUserQuestion`, and do not
 reach for the underlying git commands to get past it.
 
@@ -282,13 +282,35 @@ into someone's summary.
 
 ## Resuming
 
-Read whichever artifacts exist, reconcile them against the commit history, and re-enter at the
-first phase whose exit condition is unmet. No `plan.md` → phase 5 has not finished, whether or not
-a worktree exists. No `validation.md` → phase 6. An open pull request → phase 11, **not** done.
+A resume has two steps, and omitting the second is the defect this section has already produced
+twice: the phases being skipped did not only write artifacts, they also **put the session
+somewhere**. Re-entering at a later phase inherits none of that.
 
-Work that out **before** touching `EnterPlanMode`. Re-entering at phase 5 or later means the run
-never calls `ExitPlanMode`, so entering plan mode there would leave the session unable to do the
-one thing it resumed to do.
+**1. Establish the first unmet phase**, from whichever artifacts exist, reconciled against the
+commit history:
+
+| What is missing | First unmet phase |
+| --- | --- |
+| `plan.md` | 5 — unfinished, whether or not a worktree exists |
+| `implementation.md` | 5 — its exit condition needs the implemented scope *and* the record |
+| `validation.md` | 6 |
+| nothing, but the pull request is open | 11, **not** done |
+
+`plan.md` marks phase 5 *started*; `implementation.md` marks it *finished*. Reading only the first
+resumes at phase 6 with the implementation half-written, and phase 6 then proves something nobody
+finished.
+
+**2. Reconstitute the session** for that phase, before doing anything in it:
+
+- **Plan mode** — enter only if the phase is 1–4. A later phase never reaches the `ExitPlanMode`
+  in phase 4, so entering would hold the session read-only through the whole of a phase whose job
+  is to write.
+- **The worktree** — for phase 5 and later, run `scripts/worktree-setup.sh` and `EnterWorktree`
+  the path it prints, exactly as phase 5 does. The script is idempotent: on a resume it returns
+  `case=resumed` with the existing tree, and it gates on a dirty one rather than merging into it.
+  **Without this the session stays in the caller's checkout**, and every fix, artifact write, and
+  commit for the rest of the run lands on whatever branch is checked out there — possibly the
+  default branch, which is the one thing this pipeline must never touch.
 
 ## What must never happen
 

@@ -89,7 +89,7 @@ Add `--remote <name>` when the **Remote** row in `AGENTS.md` names one instead o
 
 Exit 0 prints `worktree=`, `case=`, and `remote=`; carry all three into `implementation.md`. The
 remote matters past this phase: phase 10 pushes to it by name, and re-deriving it there would let
-git answer the question by its own defaults instead. Exit 10, 11, or 12 is a gate: read
+git answer the question by its own defaults instead. Exit 10, 11, 12, or 13 is a gate: read
 `worktrees.md` for what each means, print the `Human decision required` block, and do not reach for
 the underlying git commands to get past it.
 
@@ -150,6 +150,20 @@ fails, say so in one line and finish anyway.
 Read whichever artifacts exist, reconcile them against the commit history, and re-enter at the
 first phase whose exit condition is unmet. An open pull request means phase 11 has not converged —
 it does not mean the task is finished.
+
+| What is missing | First unmet phase |
+| --- | --- |
+| `plan.md` | 5 — unfinished, whether or not a worktree exists |
+| `implementation.md` | 5 — its exit condition needs the implemented scope *and* the record |
+| `validation.md` | 6 |
+
+`plan.md` marks phase 5 *started*; `implementation.md` marks it *finished*. Reading only the first
+resumes at phase 6 with the implementation half-written.
+
+**Re-run `scripts/worktree-setup.sh` before the first command of a resumed phase 5 or later.** It
+is idempotent — `case=resumed` with the existing tree — and this edition threads the printed path
+through every command by hand, so a resume that skips it has no path to thread and silently uses
+the caller's checkout instead.
 
 A `plan.md` in the tree **is** the approval the write rule above refers to. A resume into phase 5
 or later is not held by that rule, and re-approving a plan that was already approved is not

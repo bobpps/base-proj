@@ -47,6 +47,7 @@ records and it should be possible to tell them apart later.
 | 10 | The branch is checked out outside the configured root | **Gate.** Offer a different branch, or ask the human to free that checkout |
 | 11 | The resumed worktree has uncommitted changes | **Gate.** Read the artifacts, establish which phase the run reached, then either commit that work as its own unit or ask how to reconcile it |
 | 12 | A merge conflicted; it was aborted and the tree restored | **Gate.** The conflict is a human decision, and the output names the ref it conflicted with |
+| 13 | The target path holds something that is not a registered worktree | **Gate.** Nothing was removed. Whether that directory is leftover garbage or unrelated work is exactly the question a human should answer |
 | 2 | Bad arguments, or an unusable repository | Not a gate — a bug in the caller or a missing `AGENTS.md` value. Fix it and re-run |
 
 **A gate is never worked around.** The script refuses precisely the operations that would need a

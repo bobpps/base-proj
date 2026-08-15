@@ -345,11 +345,17 @@ Recorded because a list read later without its exclusions looks like an oversigh
 | `.nvmrc` or `global.json` | 2 |
 | `.claude/settings.json` | 3.1 (tracker plugin), 5 |
 | `.mcp.json` | 3.1, when the tracker needs a server |
-| `docs/decisions/0001-stack-and-validation.md` | 2, 6, plus the base-template stamp |
-| `docs/decisions/0002-architecture-boundaries.md` | 8, when it was answered |
+| `docs/decisions/<next>-stack-and-validation.md` | 2, 6, plus the base-template stamp |
+| `docs/decisions/<next+1>-architecture-boundaries.md` | 8, when it was answered |
 | `TEMPLATE.md` | deleted |
 
-The stamp in `0001` records the `base-proj` commit and the date this project was created from it.
+`<next>` is the next free number, not `0001`. The template ships decisions of its own — the first
+is `0001-one-remote-per-run.md` — and `0000-template.md` requires the next free number and forbids
+reuse, so a hardcoded `0001` would give every initialized repository two decisions wearing the same
+number. Read the directory and count.
+
+The stack-and-validation stamp records the `base-proj` commit and the date this project was created
+from it.
 Nothing reads it automatically — the template deliberately has no synchronisation mechanism — but a
 hand comparison later is impossible without it.
 
@@ -384,7 +390,8 @@ Mechanically checkable, on a fresh clone:
    every `run:` step contains a command rather than a placeholder.
 4. Each of the eight proving commands either runs successfully or is recorded in `AGENTS.md` as
    not applicable, with a reason.
-5. `docs/decisions/0001-*.md` exists and names the base commit.
+5. A stack-and-validation decision exists, numbered above every decision the template shipped, and
+   names the base commit.
 6. `docs/engineering/` is byte-identical to the template. **This is the acceptance test that
    matters most** — it is the mechanical proof that the interview cannot reach the doctrine.
 7. The final report lists every value that was asked rather than derived, and every placeholder

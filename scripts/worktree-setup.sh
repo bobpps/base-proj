@@ -12,6 +12,7 @@
 #   10  gate        — the branch is checked out outside the configured root
 #   11  gate        — the resumed worktree has uncommitted changes
 #   12  gate        — a merge conflicted; the merge was aborted and the tree restored
+#   13  gate        — the target path is occupied by something that is not a worktree
 #   2   usage       — bad arguments or an unusable repository
 #
 # On exit 0 it prints key=value lines for the caller to read. On a gate it prints the same
@@ -189,6 +190,28 @@ if [ -n "$checked_out_at" ] && [ "$under_root" = false ]; then
     "checked_out_at=$checked_out_at" \
     "root=$ROOT"
   exit 10
+fi
+
+# --- Is the target path free? -------------------------------------------------------------------
+#
+# A path that exists but is not a registered worktree — a failed cleanup, an interrupted setup, a
+# stray directory — makes `git worktree add` fail with git's own status 128, which `set -e` turns
+# into an exit code this procedure never documented and the pipeline has no meaning for. Whether
+# that directory is leftover garbage or somebody's unrelated work is a human question, so it opens
+# a gate instead of being removed here.
+#
+# An empty directory is left alone: `git worktree add` accepts one, and gating on it would refuse a
+# state that works.
+if [ -z "$checked_out_at" ] && [ -e "$WT" ]; then
+  occupied=yes
+  if [ -d "$WT" ] && [ -z "$(ls -A "$WT" 2>/dev/null)" ]; then occupied=no; fi
+  if [ "$occupied" = yes ]; then
+    emit_gate path-occupied \
+      "branch=$BRANCH" \
+      "path=$WT" \
+      "registered_worktree=no"
+    exit 13
+  fi
 fi
 
 # --- Establish the worktree -------------------------------------------------------------------

@@ -237,7 +237,24 @@ else
 fi
 rm -rf "$D"
 
-# --- 15. a single-branch clone still sees the task branch ---------------------------------------
+# --- 15. the target path occupied by something that is not a worktree ---------------------------
+D="$(new_fixture)"
+mkdir -p "$D/clone/.worktrees/feat/x"
+echo leftover > "$D/clone/.worktrees/feat/x/stale.txt"
+run "$D/clone"
+check  "occupied path: exit 13" "13"            "$RC"
+check  "occupied path: gate"    "path-occupied" "$(field gate)"
+exists "occupied path: nothing was removed" "$D/clone/.worktrees/feat/x/stale.txt"
+rm -rf "$D"
+
+# --- 16. an empty directory at the target is not an obstruction ---------------------------------
+D="$(new_fixture)"
+mkdir -p "$D/clone/.worktrees/feat/x"
+run "$D/clone"
+check "empty target directory: exit 0" "0" "$RC"
+rm -rf "$D"
+
+# --- 17. a single-branch clone still sees the task branch ---------------------------------------
 #
 # `git clone --single-branch` leaves a refspec covering only the base, so a plain fetch succeeds
 # and creates no remote-tracking ref for the task branch. Classified on that, the branch reads as

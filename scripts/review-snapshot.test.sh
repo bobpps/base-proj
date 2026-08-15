@@ -81,6 +81,25 @@ printf 'rebuilt\n' > "$D/build/out.js"
 printf 'more\n' > "$D/ignored"
 same "ignored files do not move the snapshot" "$BEFORE" "$(snap)"
 
+# --- 8. the intent-to-add step subagent-briefs.md tells the run to take ------------------------
+#
+# Two claims are made there about git's behaviour, and a claim about a tool is worth exactly as
+# much as the run that proves it. First: `--intent-to-add` brings an untracked file into
+# `git diff HEAD`, which is what lets the reviewers see new code at all. Second: it does not blind
+# the snapshot — the file's content moves from the untracked component into the tracked one, and an
+# edit still registers.
+printf 'fresh\n' > "$D/created-in-phase-5.txt"
+git -C "$D" add --intent-to-add --all
+if git -C "$D" diff HEAD --name-only | grep -qx created-in-phase-5.txt; then
+  pass "intent-to-add: the new file appears in git diff HEAD"
+else
+  fail "intent-to-add: the new file appears in git diff HEAD" "absent from the diff"
+fi
+
+BEFORE="$(snap)"
+printf 'edited by a reviewer\n' > "$D/created-in-phase-5.txt"
+changed "intent-to-add: an edit to it still moves the snapshot" "$BEFORE" "$(snap)"
+
 rm -rf "$D"
 
 echo

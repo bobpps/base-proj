@@ -91,6 +91,27 @@ gets pasted into the checkpoint.
   the validation line in `AGENTS.md`. Return: the approach, the file list, the validation plan,
   and the risks in it."
 
+## Assembling the review input
+
+`git diff HEAD` is not the change. Files created in phase 5 are untracked until phase 10 stages
+them, and that command cannot see an untracked file at all — so a reviewer briefed with it alone
+reviews every line the run **modified** and none of the lines it **wrote**. New code is exactly the
+code most worth reviewing, and its absence looks like a clean diff rather than like a mistake.
+
+Mark the additions first, then take the diff:
+
+```sh
+git -C <worktree> add --intent-to-add --all
+git -C <worktree> diff HEAD
+```
+
+`--intent-to-add` records that the paths exist without staging their content, which is what brings
+them into the diff. It stages nothing, so phase 10 still stages the approved paths explicitly and
+the bulk-stage prohibition is untouched. It respects `.gitignore`, so build output stays out.
+
+Do this **before** the first snapshot below, so both snapshots see the same tree — otherwise the
+marking itself registers as a change and reads as a reviewer that edited.
+
 ## Phase 7 — the review fan-out
 
 Run `scripts/review-snapshot.sh` before launching, launch the passes in one message, run it again
@@ -166,7 +187,7 @@ Task the change implements:
 Scope of the change:
 - Branch: <branch>
 - Worktree: <path>
-- Review this diff: <the command that produces it>
+- Review this diff: <the command from "Assembling the review input" below, verbatim>
 
 Read for context:
 - AGENTS.md — architecture boundaries, invariants, validation expectations
