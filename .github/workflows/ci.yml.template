@@ -70,6 +70,12 @@ jobs:
             exit 1
           fi
 
+      # Needs only bash and git, so it runs whatever the project's stack is. It guards the
+      # procedure every task run uses to get its isolated worktree — which is machinery this
+      # repository owns, and therefore machinery this repository has to keep proving.
+      - name: Worktree procedure
+        run: bash scripts/worktree-setup.test.sh
+
       - name: Type correctness
         run: "{{CMD_TYPECHECK}}"
 

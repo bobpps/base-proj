@@ -77,14 +77,21 @@ Who approves that plan depends on the run, per phase 4 of `checkpoints.md`:
 - **Analysis-only** — publish the plan and stop.
 
 **Phase 5 — the worktree.** After approval and before the first edit, derive the branch name from
-the pattern in `AGENTS.md` and follow `docs/engineering/worktrees.md` — fetch, classify into one of
-five cases, synchronise against both the branch's own remote head and the base, inspect before
-synchronising on the resume path, and gate on a branch checked out elsewhere. Both editions read
-that file, so the enumeration cannot drift between them.
+the pattern in `AGENTS.md` and run the procedure. **Do not run the git commands by hand** — the
+script is the procedure, and `docs/engineering/worktrees.md` explains why that is not a matter of
+convenience:
 
-One thing belongs to this edition: there is no session-level move into the tree, so run every
-subsequent command with the worktree path explicitly. A forgotten path writes into the main
-workspace, which is the failure the whole isolation contract exists to prevent.
+```sh
+scripts/worktree-setup.sh --branch <branch> --base <base> --root <worktree-root>
+```
+
+Exit 0 prints `worktree=` and `case=`; carry both into `implementation.md`. Exit 10, 11, or 12 is
+a gate: read `worktrees.md` for what each means, print the `Human decision required` block, and do
+not reach for the underlying git commands to get past it.
+
+There is no session-level move into the tree in this edition, so run every subsequent command with
+the printed worktree path explicitly. A forgotten path writes into the main workspace, which is
+the failure the whole isolation contract exists to prevent.
 
 On a fresh run, write `plan.md` as the first act inside the tree, before the first edit, carrying
 what phases 2–4 concluded — including the gate answers and what they ruled out. On the resume path

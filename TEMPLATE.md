@@ -34,6 +34,7 @@ is to delete this file.
 | `.claude/skills/` | `init-project`, `task-pipeline`, `retrospective`, `lessons`, `qa-architect`, `docs-audit`, `code-critic`. |
 | `.codex/skills/` | The Codex edition of the pipeline, same contract. |
 | `scripts/copy-skills-to-agents.mjs` | Regenerates `.agents/skills/` so Codex can discover them. |
+| `scripts/worktree-setup.sh` | The worktree procedure every task run uses, with `worktree-setup.test.sh` proving it. Needs only bash and git. |
 | `.github/workflows/ci.yml.template` | The structural half of CI — concurrency, permissions, the tracked-environment-file guard — with the commands left blank. Inert until `/init-project` renames it to `ci.yml`, because GitHub runs `*.yml` and would fail on the placeholders. |
 | `docs/decisions/0000-template.md` | The decision-record format. |
 

@@ -147,16 +147,22 @@ mode is read-only.
 ## Phase 5: enter the worktree, then implement
 
 After approval and before the first edit, derive the branch name from the pattern in `AGENTS.md`
-and follow **`docs/engineering/worktrees.md`** — fetch, classify into one of five cases,
-synchronise against both the branch's own remote head and the base, inspect before synchronising
-on the resume path, and gate on a branch checked out elsewhere. Both editions read that file, so
-the enumeration cannot drift between them.
+and run the procedure. **Do not run the git commands by hand** — the script is the procedure, and
+`docs/engineering/worktrees.md` explains why that is not a matter of convenience:
 
-One thing belongs to this edition. Move the session into the tree with `EnterWorktree`, passing
-`path:`, so every later command runs there without the path being threaded through by hand.
-**Create the tree with `git worktree add` first rather than letting `EnterWorktree` create one by
-`name`** — the name form puts it somewhere the repository does not ignore and the Codex edition
-does not know about, which breaks the property that lets the two editions see each other's trees.
+```sh
+scripts/worktree-setup.sh --branch <branch> --base <base> --root <worktree-root>
+```
+
+Exit 0 prints `worktree=` and `case=`; carry both into `implementation.md`. Exit 10, 11, or 12 is
+a **gate**: read `worktrees.md` for what each one means, ask through `AskUserQuestion`, and do not
+reach for the underlying git commands to get past it.
+
+Then move the session into the tree with `EnterWorktree`, passing `path:` — the path the script
+printed — so every later command runs there without it being threaded through by hand. **Never
+let `EnterWorktree` create the tree by `name`:** that form puts it somewhere the repository does
+not ignore and the Codex edition does not know about, which breaks the property that lets the two
+editions see each other's trees.
 
 On a fresh run, write `plan.md` as the first act inside the tree, before the first edit, carrying
 what phases 2–4 concluded. On the resume path it is already there — step 5 covers what to do with
