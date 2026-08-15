@@ -328,7 +328,7 @@ Recorded because a list read later without its exclusions looks like an oversigh
 | `AGENTS.md` | every block |
 | `CLAUDE.md` | 1.3, 5 (skill table rows), 8 |
 | `README.md` | 1, 2, 6, 8 |
-| `.github/workflows/ci.yml` | 2, 3.2, 6 |
+| `.github/workflows/ci.yml` | 2, 3.2, 6 — **renamed from `ci.yml.template`**, which is what keeps it inert in the template: GitHub runs `.github/workflows/*.yml` and nothing else, so a placeholder-carrying `ci.yml` would fail on every pull request against `base-proj` itself |
 | package manifest — `package.json` or `*.csproj` / `global.json` | 2 |
 | `.nvmrc` or `global.json` | 2 |
 | `.claude/settings.json` | 3.1 (tracker plugin), 5 |
@@ -368,8 +368,8 @@ Mechanically checkable, on a fresh clone:
 1. `grep -rn '{{' --include='*.md' --include='*.yml' --include='*.json' .` returns nothing except
    `{{TODO}}` markers explicitly recorded in the final report.
 2. `TEMPLATE.md` does not exist.
-3. The CI workflow parses as YAML, and every `run:` step contains a command rather than a
-   placeholder.
+3. `.github/workflows/ci.yml` exists, `ci.yml.template` does not, the file parses as YAML, and
+   every `run:` step contains a command rather than a placeholder.
 4. Each of the eight proving commands either runs successfully or is recorded in `AGENTS.md` as
    not applicable, with a reason.
 5. `docs/decisions/0001-*.md` exists and names the base commit.

@@ -5,7 +5,17 @@
 # line defends against — a configuration line whose reason is not written down gets
 # deleted by the first person who can see its cost and not its purpose.
 #
-# `{{PLACEHOLDER}}` values are filled in by /init-project.
+# `{{PLACEHOLDER}}` values are filled in by /init-project, which also renames this
+# file to `ci.yml`.
+#
+# The `.template` suffix is why the file is inert: GitHub runs `.github/workflows/*.yml`
+# and nothing else. Named `ci.yml` in the template, this workflow runs on every pull
+# request against base-proj itself and fails on the first placeholder — observed, at
+# `Run {{CI_SETUP_STEPS}}` → `command not found`, exit 127.
+#
+# The alternative was to guard each step on whether the repository is still a template.
+# That works too, and leaves a permanent conditional in the CI of every generated
+# project — scaffolding that outlives its reason. A rename leaves nothing behind.
 name: CI
 
 on:
