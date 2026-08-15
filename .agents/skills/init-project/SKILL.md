@@ -125,15 +125,21 @@ Run these and report each result. They are cheap, and every one of them has a fa
 looks like success:
 
 ```sh
-scripts/doctrine-checksum.sh                                    # must equal the recorded value
-grep -rn '{{' --include='*.md' --include='*.yml' --include='*.json' .
-ls .github/workflows/                                           # ci.yml present, no .template
+scripts/doctrine-checksum.sh    # must equal the value recorded before the first question
+scripts/placeholders.sh         # exit 0 means nothing unresolved; {{TODO}} markers may remain
+ls .github/workflows/           # ci.yml present, no .template
 ```
+
+**Use `placeholders.sh` rather than grepping for `{{`.** A plain grep matches two things that are
+supposed to be there forever: `${{ github.sha }}` and every other GitHub Actions expression in the
+workflow, and the skills and specification that *describe* placeholders in order to refuse them. A
+check that can never pass gets ignored, and an agent trying to make it pass edits a workflow's own
+logic to satisfy a pattern.
 
 | Check | What a pass means |
 | --- | --- |
 | The doctrine checksum is unchanged | The interview never reached the layer it must not touch |
-| No `{{` remains | Except `{{TODO}}` markers, each of which the report names |
+| `placeholders.sh` exits 0 | Nothing is unresolved; each `{{TODO}}` it lists goes in the report |
 | `ci.yml` exists, `ci.yml.template` does not, and it parses as YAML | CI will actually run — a `.template` never does |
 | Every `run:` step holds a command | A placeholder in a `run:` step fails at exit 127, observed |
 | Each of the eight proving commands runs, or is recorded as not applicable with a reason | `evidence.md` distinguishes "cannot be proved" from "nothing to prove" |

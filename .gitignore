@@ -34,3 +34,7 @@ coverage/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Written by the setup steps in TEMPLATE.md so /init-project can stamp which commit of the
+# template this project came from, and deleted by /init-project once the stamp has a home.
+.base-proj-revision

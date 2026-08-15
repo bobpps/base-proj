@@ -58,8 +58,20 @@ repository two decisions wearing the same number.
 
 The stack-and-validation record carries the **base-template stamp**: the `base-proj` commit this
 project was created from, and the date. Nothing reads it automatically — the template deliberately
-has no synchronisation mechanism — but a comparison by hand later is impossible without it, and the
-commit stops being knowable the moment the history is replaced.
+has no synchronisation mechanism — but a comparison by hand later is impossible without it.
+
+**Read the commit from `.base-proj-revision`, then delete that file.** It is written by the setup
+instructions in `TEMPLATE.md` before `rm -rf .git`, which is the only moment the commit is still
+knowable: the line after it replaces the history, and `git rev-parse HEAD` afterwards answers about
+the new empty repository instead. Once the value is in the decision record it has a home, and a
+loose dotfile in the root would only rot.
+
+Where the file is absent — the human ran the steps out of order, or cloned some other way — record
+the stamp as *unknown; the history was replaced before the revision was captured*, and say so in
+the final report. **Do not reconstruct it by asking the network what `base-proj`'s HEAD is now.**
+That answers a different question: today's tip is not the commit this project was made from, and a
+plausible wrong commit in a stamp is worse than a blank, because the whole purpose of the stamp is
+to be trusted later by someone comparing two repositories.
 
 Write each record in the shape `0000-template.md` fixes, including **Consequences** and
 **Alternatives considered**. A decision recorded with only its upside reads as free, and the next

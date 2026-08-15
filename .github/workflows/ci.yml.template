@@ -86,6 +86,12 @@ jobs:
       - name: Doctrine checksum
         run: bash scripts/doctrine-checksum.test.sh
 
+      # The placeholder scan decides whether a configuration run finished. Its two known wrong
+      # answers - a GitHub expression read as a placeholder, a skill that documents one - both make
+      # the check unpassable, and an unpassable check gets satisfied by editing the wrong thing.
+      - name: Placeholder scan
+        run: bash scripts/placeholders.test.sh
+
       - name: Type correctness
         run: "{{CMD_TYPECHECK}}"
 

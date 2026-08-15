@@ -125,14 +125,23 @@ One multiple-choice question. Defaults come from the template's own decisions an
 
 | Contour | Default | What turning it on costs |
 | --- | --- | --- |
-| Decision records in `docs/decisions/` | **on** | almost nothing; a directory and a habit |
 | Codex edition and generated `.agents/` | **on** | every rule expressed twice, in two harness vocabularies |
 | QA package for a human tester | **on** | documents that only pay off if somebody reads them |
 | Cursor rules | off | a third copy of the same rules, which then drifts |
 | Vendor plugin and user skills into `.agents/` | off | one machine's installed set committed to the repository, ageing unnoticed |
 
-**The retrospective loop is not asked about.** It costs one report per run, it is non-blocking by
-construction, and without it the rules stop improving — which is the reason this template exists.
+**Two things are not on this list, and both were considered for it.**
+
+*Decision records in `docs/decisions/`* are not optional, because the doctrine already depends on
+them: the pipeline reads every file in that directory in its first phase, a reviewer finding is
+rejected against a recorded decision, and the base-template stamp lives in the first record. An
+opt-out here would produce a repository whose pipeline reads a directory that was deliberately
+deleted — an input with no valid output. If the human asks for it anyway, that is a change to
+`checkpoints.md`, and therefore a decision record rather than an interview answer.
+
+*The retrospective loop* is not asked about either. It costs one report per run, it is non-blocking
+by construction, and without it the rules stop improving — which is the reason this template
+exists.
 
 **Turning a contour off deletes its files and removes its rows from the tables in `CLAUDE.md`.** A
 skill listed in a table but absent from disk is worse than an absent skill: the table is what the
