@@ -81,6 +81,11 @@ the file contradict itself on the day it is generated.
 Name the exception: which documents are in which language, and that the rest stays English. Empty
 is correct only when the answer to 1.4 was English.
 
+The QA package is the second document this covers. `qa-architect` writes a manual test plan for a
+human tester — often a contractor rather than a developer — and reads the language from this row.
+Where the QA contour is on and 1.4's answer is not English, name both the README and the QA
+documents here; with the contour off, name the README alone.
+
 ### The Codex contour, turned off, is more than a deletion
 
 Block 5 can remove the Codex edition and the generated `.agents/`. Deleting those directories and
@@ -91,6 +96,10 @@ pointing every later agent at paths that are not there.
 Rewrite that section to describe what remains. This is the same rule as the skill table — a listing
 must match the disk — and it is easier to miss here because the section is prose rather than a
 table, so nothing about its shape suggests it holds an inventory.
+
+**The same paragraph names every supporting skill**, so turning the QA contour off means editing it
+too, not only deleting `.claude/skills/qa-architect/` and its `CLAUDE.md` row. `scripts/skills.test.sh`
+checks the table against the disk; it cannot check a sentence, which is why this is written down.
 
 ### The template notes are deleted, not filled
 

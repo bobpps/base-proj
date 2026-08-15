@@ -274,6 +274,11 @@ fixed; the contents are yours to shape.**
 **The shapes are in `docs/engineering/checkpoint-formats.md`**, read by every edition, so two runs
 produce records that can be compared with each other.
 
+A fifth name is reserved and belongs to nobody here: `retrospective.md`, written after phase 12 by
+the `retrospective` skill. It is a record of how the *run* went rather than of what the change did,
+it is non-blocking, and a task folder without one is a complete record of the change. Keep the two
+apart — a retrospective that edits the four files is editing its own evidence.
+
 Write each file at the end of the phase that owns it, not at the end of the run: an interrupted
 run should leave a record that is true as far as it goes.
 

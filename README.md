@@ -56,3 +56,10 @@ Start a task with the `task-pipeline` skill. It classifies the run by risk, deba
 requirements with independent reviewers, gates on the human where risk demands it, implements in
 an isolated worktree, proves the result, reviews the diff through six lenses, adjudicates every
 finding by id, and drives the pull request's review loop to a verdict.
+
+Five more skills sit around it, and `CLAUDE.md` says which request goes to which. Two of them close
+a loop: `retrospective` records what each finished run should have caught earlier, and `lessons`
+applies the accumulated reports to the rules they indict, so the rules improve from runs rather
+than from memory. The other three answer a question on request — a manual test plan
+(`qa-architect`), documentation checked against the code it describes (`docs-audit`), and a
+deliberately harsh architectural read (`code-critic`).

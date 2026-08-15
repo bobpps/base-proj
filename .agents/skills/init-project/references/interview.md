@@ -155,21 +155,25 @@ One multiple-choice question. Defaults come from the template's own decisions an
 | Contour | Default | What turning it on costs |
 | --- | --- | --- |
 | Codex edition and generated `.agents/` | **on** | every rule expressed twice, in two harness vocabularies |
-| QA package for a human tester | **unavailable** | — see below |
+| QA package for a human tester | **on** | a `qa/` corpus, kept current per finished feature |
 | Cursor rules | **unavailable** | — see below |
 | Vendor plugin and user skills into `.agents/` | off | one machine's installed set committed to the repository, ageing unnoticed |
 
-**Cursor rules cannot be turned on either**, and for the same reason as the QA package: nothing in
-the writing map creates them, and no template exists to create them from. Enabling a contour whose
-only defined operation is deletion asks the agent to invent both the format and the rules — and the
-rules it would invent are this repository's, restated from memory into a third file that then
-drifts from the two that are real. Offer it again when there is something to write.
+**Cursor rules cannot be turned on.** Nothing in the writing map creates them and no template
+exists to create them from, so enabling a contour whose only defined operation is deletion asks the
+agent to invent both the format and the rules — and the rules it would invent are this
+repository's, restated from memory into a third file that then drifts from the two that are real.
+Offer it again when there is something to write.
 
-**The QA package cannot be turned on yet.** The `qa-architect` skill that would produce it is not
-built — `CLAUDE.md` says so per row — and nothing in the writing map creates those documents. An
-offered contour that no operation can honour produces a repository whose skill table names a file
-that is not there, which is the failure that table's third column exists to prevent. Offer it again
-when the skill exists.
+**The QA package is on by default and creates nothing at setup time.** `qa-architect` writes its
+documents when a feature is finished, so what the contour decides is whether the skill and its
+`CLAUDE.md` row stay. Turning it off deletes both.
+
+It has one consequence elsewhere in this interview, and it is easy to miss because it lands in a
+different block: question 1.4 offers the language of human-facing documents as covering the README
+**and the QA package**. The manual test plan's reader is frequently a contractor rather than a
+developer, so where 1.4's answer is not English, `{{DOC_LANGUAGE_EXCEPTIONS}}` names the QA
+documents alongside the README. With the contour off, it names the README alone.
 
 **Two things are not on this list, and both were considered for it.**
 
