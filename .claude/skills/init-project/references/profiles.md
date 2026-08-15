@@ -36,8 +36,21 @@ npm-shrinkwrap.json*, exit 1. Writing `package.json` alone therefore produces a 
 documented setup command and whose CI both fail on the first run, and the failure looks like a
 broken workflow rather than like a missing file.
 
-So run `npm install` once after writing the manifest, and leave `package-lock.json` in place for
-the first commit. Where that cannot run — no network, no toolchain on this machine — say so in the
+**Install the tools the defaults name, first.** A manifest carrying only `type` and `workspaces`
+has no TypeScript, no ESLint, no Prettier and no test runner, so `npm install` writes an empty
+lockfile and the proving commands fail on a missing binary — `npm test` exits 127 because `vitest`
+is not there. The defaults in the table above are not free: each one names a package the project
+has to depend on.
+
+```sh
+npm install --save-dev typescript eslint prettier vitest
+```
+
+Add whatever question 2.6 named for `build`, and let npm resolve the versions rather than choosing
+them here — a version written into this file ages badly and would be wrong for most projects that
+read it.
+
+Then `npm install` completes the lockfile, and it stays for the first commit. Where that cannot run — no network, no toolchain on this machine — say so in the
 final report as an unmet prerequisite, in the same shape as a missing remote: the project is
 configured, and it will not install until somebody generates the lockfile.
 

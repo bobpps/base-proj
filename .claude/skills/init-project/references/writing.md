@@ -42,7 +42,7 @@ fills it. The check will say so.
 | `PROJECT_DESCRIPTION` | `README.md` | 1.5 |
 | `PROJECT_CONTEXT` | `AGENTS.md` | 1.5, condensed to what an agent needs before touching code |
 | `USER_LANGUAGE` | `AGENTS.md` | 1.3 |
-| `DOC_LANGUAGE_EXCEPTIONS` | `AGENTS.md` | 1.4 — empty when documents follow 1.3 |
+| `DOC_LANGUAGE_EXCEPTIONS` | `AGENTS.md` | 1.4 — empty **only when human-facing documents are English** |
 | `CMD_TYPECHECK` `CMD_LINT` `CMD_FORMAT_CHECK` `CMD_TEST` `CMD_TEST_ONE` `CMD_INTEGRATION` | `AGENTS.md`, `README.md` | 2.4, the eight roles |
 | `CMD_BUILD` `CMD_SMOKE` | `AGENTS.md`, `README.md` | 2.4, and 2.6 where the profile's default is a wrapper script with no body |
 | `CMD_FORMAT` | `README.md` | 2.4 — formatting in **write** mode, not the check |
@@ -69,6 +69,28 @@ fills it. The check will say so.
 | `OUT_OF_SCOPE` | `AGENTS.md`, `README.md` | 8.4 |
 | `WORKING_STYLE_ADDITIONS` | `CLAUDE.md` | 5, or empty |
 | `PLACEHOLDER` | `AGENTS.md`, `CLAUDE.md` | **not a value** — see below |
+
+### The language exception is written whenever there is one
+
+`AGENTS.md` says everything that lands in the repository stays in English, and then carries
+`{{DOC_LANGUAGE_EXCEPTIONS}}` for what does not. Question 1.4 defaults to *the same language as the
+agent replies in*, which defaults to Russian — so the common path writes a Russian `README.md` into
+a repository whose own rules say documentation is English, and leaving the exception empty makes
+the file contradict itself on the day it is generated.
+
+Name the exception: which documents are in which language, and that the rest stays English. Empty
+is correct only when the answer to 1.4 was English.
+
+### The Codex contour, turned off, is more than a deletion
+
+Block 5 can remove the Codex edition and the generated `.agents/`. Deleting those directories and
+the `CLAUDE.md` rows is half the job: `AGENTS.md` has a **Skills** section naming
+`.codex/skills/task-pipeline/` and the generator that writes `.agents/skills/`, and it would go on
+pointing every later agent at paths that are not there.
+
+Rewrite that section to describe what remains. This is the same rule as the skill table — a listing
+must match the disk — and it is easier to miss here because the section is prose rather than a
+table, so nothing about its shape suggests it holds an inventory.
 
 ### The template notes are deleted, not filled
 
