@@ -76,26 +76,40 @@ Who approves that plan depends on the run, per phase 4 of `checkpoints.md`:
 - **Analysis-only** — publish the plan and stop.
 
 **Phase 5 — the worktree.** After approval and before the first edit, with the root and branch
-pattern from `AGENTS.md`. `-b` means *create a new branch* and fails on one that already exists,
-so the form depends on which case this is:
+pattern from `AGENTS.md`. Decide which of four cases the run is in before running anything — the
+commands differ, and two of them fail outright in the wrong case:
+
+| Case | What to do |
+| --- | --- |
+| The branch does not exist | `git worktree add <root>/<branch> -b <branch> <base-branch>` |
+| It exists; no tree for it under the configured root | `git worktree add <root>/<branch> <branch>`, then synchronise |
+| It exists; a tree for it is already under the configured root | Reuse that tree — this is the resume path — then synchronise |
+| It is checked out anywhere else, the caller's ordinary checkout included | Stop and gate |
+
+`-b` means *create a new branch* and fails on one that already exists.
+
+Synchronise before the first edit, in both existing-branch cases:
 
 ```sh
-# a branch this run derived, which does not exist yet
-git worktree add <worktree-root>/<branch> -b <branch> <base-branch>
-
-# a branch that already exists, locally or on the remote
-git worktree add <worktree-root>/<branch> <branch>
+git -C <root>/<branch> fetch origin
+git -C <root>/<branch> merge origin/<base-branch>
 ```
 
-Run every subsequent command with that path
-explicitly — there is no session-level move into it here, so the path is threaded by hand and a
-forgotten one writes into the main workspace.
+Merge, never rebase — the branch may already be pushed, and rebasing would demand a force-push. A
+branch created fresh off the base needs none of this. Do it here rather than at push time: the
+same conflict costs a minute now and costs the whole validation pass when it surfaces afterwards.
+
+At the gate, offer a different branch or ask the human to free that checkout. Do not take over
+another tree's checkout — git cannot check out one branch twice, and a checkout outside the
+configured root belongs to somebody else's work.
+
+Run every subsequent command with the worktree path explicitly. There is no session-level move
+into it here, so the path is threaded by hand and a forgotten one writes into the main workspace.
 
 Write `plan.md` as the first act inside the tree, before the first edit, carrying what phases 2–4
-concluded — including the gate answers and what they ruled out.
-
-Stop and gate when the branch is already checked out elsewhere. Git cannot check out one branch
-twice, and taking over another tree's checkout pulls its unrelated changes into this run.
+concluded — including the gate answers and what they ruled out. On the resume path it is already
+there: read it rather than overwriting it, and continue from the first phase whose exit condition
+is unmet.
 
 **Phase 6 — prove it.** Run the proving commands from `AGENTS.md` in proportion to risk, and
 report each with its outcome and where it ran. `evidence.md` governs what each result means.
