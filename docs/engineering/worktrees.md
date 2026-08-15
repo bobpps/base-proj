@@ -70,6 +70,11 @@ deleted by whoever next finds it inconvenient.
 - **A new branch starts at the fetched base, not the local one.** A stale local base puts the
   branch behind before a single edit and defers every base conflict past validation.
 
+  And when the remote carries no such base, the procedure refuses rather than falling back to a
+  local ref of that name. The local ref is not evidence about the server — it is a branch that
+  happens to share a name, and it can be arbitrarily old. Substituting it is the same defect
+  wearing the word "fallback", and it reports `status=ready` while doing it.
+
 - **Synchronising means two refs, not one.** The branch's own remote head carries commits this
   checkout does not have — a previous run, another machine, a collaborator. The base carries what
   the branch has to integrate with. Merging only the base *feels* like having synchronised and

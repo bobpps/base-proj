@@ -54,13 +54,20 @@ git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1 || {
   exit 2
 }
 
-# Absolute, because every later comparison is a path comparison and a relative one would
-# silently compare against the wrong directory.
-REPO="$(cd "$REPO" && pwd)"
+# Absolute and physical, because every later comparison is a path comparison: `git worktree list`
+# answers with resolved paths, and comparing those against a relative, logical, or unnormalised one
+# compares the wrong strings while looking correct.
+REPO="$(cd "$REPO" && pwd -P)"
 case "$ROOT" in
   /*) ;;
   *) ROOT="$REPO/$ROOT" ;;
 esac
+
+# `.worktrees/` is how a directory is naturally written and is the initializer's own default value.
+# Left as given, the trailing slash builds `<root>//<branch>` while git reports the single-slash
+# path back, so the containment check below misses and every resume gates as checked-out-elsewhere.
+while [ "$ROOT" != "/" ] && [ "${ROOT%/}" != "$ROOT" ]; do ROOT="${ROOT%/}"; done
+if [ -d "$ROOT" ]; then ROOT="$(cd "$ROOT" && pwd -P)"; fi
 
 if [ "$BRANCH" = "$BASE" ]; then
   echo "refusing to work on the base branch: $BRANCH" >&2
@@ -141,11 +148,17 @@ ref_exists() { git -C "$REPO" show-ref --verify --quiet "$1"; }
 local_exists=false; ref_exists "refs/heads/$BRANCH" && local_exists=true
 remote_exists=false; ref_exists "refs/remotes/$REMOTE/$BRANCH" && remote_exists=true
 
+# No fallback to a local ref of the same name. That ref is not evidence about the server: it can be
+# arbitrarily stale, and starting or synchronising a task branch from a stale base puts the branch
+# behind before the first edit and defers every base conflict past validation — the exact failure
+# the fetched-base rule exists to prevent. A base the remote does not have is a repository this
+# procedure cannot set up, not an invitation to substitute.
 remote_base="$REMOTE/$BASE"
-if ! ref_exists "refs/remotes/$REMOTE/$BASE"; then
-  ref_exists "refs/heads/$BASE" || { echo "base branch not found: $BASE" >&2; exit 2; }
-  remote_base="$BASE"
-fi
+ref_exists "refs/remotes/$REMOTE/$BASE" || {
+  echo "$REMOTE has no branch $BASE, and it was fetched just now." >&2
+  echo "Push the base branch, or pass the --base this remote actually carries." >&2
+  exit 2
+}
 
 # --- Where is the branch checked out? ---------------------------------------------------------
 #

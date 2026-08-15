@@ -214,6 +214,26 @@ run "$D/clone" --remote nope
 check "unknown --remote: exit 2" "2" "$RC"
 rm -rf "$D"
 
+# --- 15. a root written with a trailing slash still resumes -------------------------------------
+#
+# `.worktrees/` is how a directory is naturally written and is the initializer's own default. An
+# unnormalised root builds `<root>//<branch>` while `git worktree list` reports the single-slash
+# path, so the containment check misses and every resume gates as checked-out-elsewhere.
+D="$(new_fixture)"
+OUT="$("$SCRIPT" --repo "$D/clone" --branch feat/x --base main --root .worktrees/ 2>&1)"; RC=$?
+check "trailing slash: first run exit 0" "0" "$RC"
+OUT="$("$SCRIPT" --repo "$D/clone" --branch feat/x --base main --root .worktrees/ 2>&1)"; RC=$?
+check "trailing slash: second run exit 0" "0"         "$RC"
+check "trailing slash: resumes its own tree" "resumed" "$(field case)"
+rm -rf "$D"
+
+# --- 16. a base the remote does not have is refused, not silently taken from local --------------
+D="$(new_fixture)"
+git -C "$D/clone" branch legacy main                 # exists locally, never pushed
+OUT="$("$SCRIPT" --repo "$D/clone" --branch feat/x --base legacy --root .worktrees 2>&1)"; RC=$?
+check "unfetched base: exit 2" "2" "$RC"
+rm -rf "$D"
+
 # --- 10. the base branch is refused ------------------------------------------------------------
 D="$(new_fixture)"
 OUT="$("$SCRIPT" --repo "$D/clone" --branch main --base main --root .worktrees 2>&1)"; RC=$?
