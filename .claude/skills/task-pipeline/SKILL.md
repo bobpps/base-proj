@@ -156,7 +156,9 @@ scripts/worktree-setup.sh --branch <branch> --base <base> --root <worktree-root>
 
 Add `--remote <name>` when the **Remote** row in `AGENTS.md` names one instead of saying `derived`.
 
-Exit 0 prints `worktree=` and `case=`; carry both into `implementation.md`. Exit 10, 11, or 12 is
+Exit 0 prints `worktree=`, `case=`, and `remote=`; carry all three into `implementation.md`. The
+remote matters past this phase: phase 10 pushes to it by name, and re-deriving it there would let
+git answer the question by its own defaults instead. Exit 10, 11, or 12 is
 a **gate**: read `worktrees.md` for what each one means, ask through `AskUserQuestion`, and do not
 reach for the underlying git commands to get past it.
 
@@ -223,8 +225,18 @@ The termination rule in `checkpoints.md` is mechanical, not a judgement call. Ap
 ## Phase 10: publish
 
 Stage only the paths belonging to the approved scope — never a bulk stage. Commit with the
-convention from `AGENTS.md`. Push, setting upstream when the branch is new. Verify that no
-in-scope change is left uncommitted and that the pushed head matches the local head.
+convention from `AGENTS.md`.
+
+**Push by naming the remote phase 5 recorded** — `git push -u <remote> <branch>`, taking `<remote>`
+from the script's `remote=` line. A bare `git push` resolves through the branch's own upstream and
+`remote.pushDefault`, either of which can name a different server than the one this run fetched and
+merged against; on a repository with several remotes that delivers the work somewhere nothing in
+this run ever looked. The answer was derived once, under a rule that refuses to guess — carry it
+rather than letting git re-answer the question by its own defaults.
+
+Then verify that no in-scope change is left uncommitted, and that the head on **that** remote
+matches the local head — read it back with `git rev-parse <remote>/<branch>` after a fetch, rather
+than taking the push command's word for where its work landed.
 
 Then open the pull request, with every deferred and documented finding in the body by id, in
 words.

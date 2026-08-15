@@ -87,9 +87,11 @@ scripts/worktree-setup.sh --branch <branch> --base <base> --root <worktree-root>
 
 Add `--remote <name>` when the **Remote** row in `AGENTS.md` names one instead of saying `derived`.
 
-Exit 0 prints `worktree=` and `case=`; carry both into `implementation.md`. Exit 10, 11, or 12 is
-a gate: read `worktrees.md` for what each means, print the `Human decision required` block, and do
-not reach for the underlying git commands to get past it.
+Exit 0 prints `worktree=`, `case=`, and `remote=`; carry all three into `implementation.md`. The
+remote matters past this phase: phase 10 pushes to it by name, and re-deriving it there would let
+git answer the question by its own defaults instead. Exit 10, 11, or 12 is a gate: read
+`worktrees.md` for what each means, print the `Human decision required` block, and do not reach for
+the underlying git commands to get past it.
 
 There is no session-level move into the tree in this edition, so run every subsequent command with
 the printed worktree path explicitly. A forgotten path writes into the main workspace, which is
@@ -116,9 +118,13 @@ same shape. What a Small run never skips is the review loop in phase 11.
 **Phases 8–9 — adjudicate, then apply only what was accepted.** The termination rule in
 `checkpoints.md` is mechanical. Apply it rather than judging each round on how it felt.
 
-**Phase 10 — publish.** Stage only the paths in the approved scope; never a bulk stage. Commit
-with the convention from `AGENTS.md`, push, verify the pushed head matches the local head, and
-open the pull request with every deferred and documented finding in the body by id.
+**Phase 10 — publish.** Stage only the paths in the approved scope; never a bulk stage. Commit with
+the convention from `AGENTS.md`, then push **by naming the remote phase 5 recorded** —
+`git push -u <remote> <branch>`. A bare `git push` resolves through the branch's own upstream and
+`remote.pushDefault`, either of which can name a different server than this run fetched and merged
+against. Verify the head on that remote matches the local head, reading it back rather than taking
+the push command's word for it, and open the pull request with every deferred and documented
+finding in the body by id.
 
 **Phase 11 — the review loop.** Follow `review-loop.md` against the reviewer `AGENTS.md` names.
 Where it names none, say so and go to phase 12; an absent reviewer is not a clean round.
