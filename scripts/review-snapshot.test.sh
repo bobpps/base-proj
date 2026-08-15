@@ -109,6 +109,10 @@ changed "intent-to-add: an edit to it still moves the snapshot" "$BEFORE" "$(sna
 
 rm -rf "$D"
 
+# --- 9. a flag whose value is missing -------------------------------------------------------------
+OUT="$(timeout 10 "$SCRIPT" --repo 2>&1)"; RC=$?
+if [ "$RC" = 2 ]; then pass "missing flag value: exit 2"; else fail "missing flag value: exit 2" "got $RC"; fi
+
 echo
 echo "  $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

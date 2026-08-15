@@ -110,6 +110,11 @@ jobs:
       # Producing an artifact and proving it runs are different claims: a bundle can
       # resolve every import at build time and die on the first process start. This
       # step starts what the build produced.
+      #
+      # /init-project deletes this step when question 2.3 says the project is a library.
+      # `AGENTS.md` records the role as "not applicable — library", which is a sentence and
+      # not a command: putting it in `run:` fails in the shell, and leaving the placeholder
+      # fails verification. There is no third option, so the step goes.
       - name: Artifact smoke
         run: "{{CMD_SMOKE}}"
 
@@ -131,5 +136,13 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The same setup the checks job gets, and for the same reason. A job that only checks out
+      # runs the integration command with no toolchain and no dependencies installed — so the one
+      # role this project decided *only CI can prove* is the one that never goes green, and the
+      # failure looks like the code rather than like the workflow.
+      - name: Set up the toolchain
+        run: "{{CI_SETUP_STEPS}}"
+
       - name: Prove what only CI can prove
         run: "{{CMD_INTEGRATION}}"

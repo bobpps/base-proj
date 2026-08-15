@@ -101,6 +101,13 @@ check "outside the list: not scanned by default" "0" "$(field unresolved)"
 run somewhere-else.md
 check "outside the list: scanned when named"     "1" "$(field unresolved)"
 
+# --- 9. a flag whose value is missing -------------------------------------------------------------
+#
+# Reported as a hang, not as a wrong exit code: without `set -e` the failed `shift 2` left the loop
+# reprocessing the same argument forever.
+OUT="$(timeout 10 "$SCRIPT" --repo 2>&1)"; RC=$?
+check "missing flag value: exit 2, not a hang" "2" "$RC"
+
 rm -rf "$D"
 
 echo

@@ -55,6 +55,10 @@ same "a change outside the directory does not move it" "$BEFORE" "$(sum)"
 OUT="$("$SCRIPT" --repo "$D" --dir nosuchdir 2>&1)"; RC=$?
 if [ "$RC" = 2 ]; then pass "a missing directory exits 2"; else fail "a missing directory exits 2" "got $RC"; fi
 
+BEFORE_RC=0
+OUT="$(timeout 10 "$SCRIPT" --dir 2>&1)"; BEFORE_RC=$?
+if [ "$BEFORE_RC" = 2 ]; then pass "missing flag value: exit 2"; else fail "missing flag value: exit 2" "got $BEFORE_RC"; fi
+
 rm -rf "$D"
 
 echo

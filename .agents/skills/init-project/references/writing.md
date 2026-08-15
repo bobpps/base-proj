@@ -44,12 +44,23 @@ their reasoning in comments. Leave them and their comments intact. A configurati
 reason is not written down gets deleted by the first person who can see its cost and not its
 purpose.
 
-The `integration` job is guarded by `if: false`. Block 6 either enables it and fills its command,
-or the job is deleted entirely. Leaving a disabled job in place is a third state nobody reads
-correctly.
+**Two steps are conditional on answers, and both are deletions rather than edits.**
 
-Where block 6 enables it, two things that job must do, learned expensively and already noted in the
-template's comments:
+*The `Artifact smoke` step goes when question 2.3 says the project is a library.* `AGENTS.md`
+records that role as `not applicable — library`, which is a sentence rather than a command: put it
+in `run:` and the shell fails, leave the placeholder and the verification fails. There is no third
+option, so the step is removed.
+
+*The `integration` job* is guarded by `if: false`. Block 6 either enables it or the job is deleted
+entirely — leaving a disabled job in place is a third state nobody reads correctly.
+
+**Where block 6 enables it, fill its toolchain step as well as its command.** Both jobs carry
+`{{CI_SETUP_STEPS}}` and both need the profile's setup and install. A job that only checks out runs
+the integration command with nothing installed, which leaves the one role this project decided only
+CI can prove as the one that never goes green — and the failure reads as the code rather than as
+the workflow.
+
+Two more things that job must do, learned expensively and already noted in the template's comments:
 
 - **Hold no secret and never point at a production environment.** A local stack runs on the
   deterministic keys its CLI prints, which are published constants rather than credentials.

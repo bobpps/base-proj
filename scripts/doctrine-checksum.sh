@@ -22,10 +22,18 @@ set -euo pipefail
 
 REPO="."
 DIR="docs/engineering"
+# A flag that takes a value proves the value is there before consuming two arguments. `shift 2`
+# with one argument left fails, and what happens then depends only on which `set` line this script
+# happens to carry: with `set -e` it exits 1 and says nothing, and without it the loop never
+# advances and the script hangs. Both were observed. Neither is the documented status 2.
+need_value() {
+  [ $# -ge 2 ] || { echo "$1 needs a value" >&2; exit 2; }
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --repo) REPO="${2-}"; shift 2 ;;
-    --dir)  DIR="${2-}";  shift 2 ;;
+    --repo) need_value "$@"; REPO="$2"; shift 2 ;;
+    --dir)  need_value "$@"; DIR="$2";  shift 2 ;;
     -h|--help) echo "usage: doctrine-checksum.sh [--repo <dir>] [--dir <path>]" >&2; exit 2 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
