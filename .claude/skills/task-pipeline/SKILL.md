@@ -204,10 +204,10 @@ After pushing in phase 10, watch CI to a verdict rather than predicting it.
 
 ## Phase 7: the review fan-out
 
-Capture the three signals `subagent-briefs.md` names — status, `HEAD`, and a hash of the diff —
-**before** launching, and compare all three afterwards. Reviewers advise; if the tree moved, an
-agent exceeded its role, and that needs to be known before those changes reach the diff. The status
-alone will not tell you: a reviewer editing an already-modified file leaves it byte-identical.
+Run `scripts/review-snapshot.sh` **before** launching, run it again afterwards, and compare the
+`snapshot=` line. Reviewers advise; if it moved, an agent exceeded its role, and that needs to be
+known before those changes reach the diff. Do not assemble the comparison by hand —
+`subagent-briefs.md` records the two ways doing so has already been wrong.
 
 For **Normal and Risky**, launch the passes in one message.
 `docs/engineering/subagent-briefs.md` has which specialist fits which pass and how to brief the
@@ -266,10 +266,16 @@ are worth delegating, because each needs a large working context whose conclusio
 something small — the wide search in phase 1, the debate in phase 2, and the review passes in
 phase 7.
 
-How to run each is open. Fan out when subtasks are genuinely independent; follow up on a live
-agent when the fix is small and its context is still warm; keep it in this session when the raw
+How to run each is open. Fan out when subtasks are genuinely independent; follow up on a live agent
+when a finding needs clarifying and its context is still warm; keep it in this session when the raw
 output needs looking at. Record the choice in `implementation.md` so retrospectives can compare
 runs.
+
+**A follow-up asks; it never applies.** `checkpoints.md` puts it in four words — *subagents advise,
+only the main session edits files* — and a warm context makes breaking that rule attractive rather
+than acceptable: the agent that found the problem is the cheapest one to fix it, and its fix would
+land before this session adjudicated the finding at all. That is precisely the change phase 7's
+snapshot exists to catch, arriving through the door the snapshot does not watch.
 
 Delegation is not free. Nesting buys isolation and costs visibility: every layer converts detail
 into someone's summary.

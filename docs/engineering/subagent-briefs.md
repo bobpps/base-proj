@@ -93,16 +93,26 @@ gets pasted into the checkpoint.
 
 ## Phase 7 — the review fan-out
 
-Before launching, record three things: `git status --porcelain`, `git rev-parse HEAD`, and a hash
-of the diff under review — `git diff HEAD | git hash-object --stdin` will do. Launch the passes in
-one message. Afterwards, compare **all three** against the recording.
+Run `scripts/review-snapshot.sh` before launching, launch the passes in one message, run it again
+afterwards, and compare the `snapshot=` line. **Do not assemble the comparison by hand** — the
+script is the procedure, and `scripts/review-snapshot.test.sh` proves it works.
 
-The status alone does not answer the question. A reviewer that edits a file already carrying
-uncommitted changes leaves the porcelain line byte-identical — ` M path` before and ` M path`
-after — so the tree reads as untouched while its contents moved, and the change reaches the commit
-without ever being adjudicated. The diff hash catches that; `HEAD` catches a reviewer that
-committed. The recording exists to detect an agent exceeding its read-only role, and an agent that
-exceeds it is the one case where the cheapest signal is also the one that misses.
+That is not ceremony. This comparison was specified in prose twice and was wrong both times, in
+ways that read as correct:
+
+- Comparing `git status --porcelain` alone. A reviewer editing a file that was *already* modified
+  leaves the porcelain line byte-identical — ` M path` before, ` M path` after — so the tree reads
+  as untouched while its contents moved.
+- Comparing a diff that omits untracked files. Most files created in phase 5 are untracked until
+  phase 10 stages them, so the reviewers see none of their content and edits to them register
+  nowhere.
+
+Both are pinned as assertions now. The snapshot covers `HEAD` as well, because a reviewer that
+commits takes its change out of both the status and the diff.
+
+A moved snapshot means an agent exceeded its read-only role. Find what it changed before those
+changes reach the commit: an unadjudicated reviewer fix is the one change nobody in this pipeline
+ever decided to make.
 
 **Coverage never depends on what is installed.** `checkpoints.md` requires six lenses on every
 Normal and Risky run. A specialist that happens to be installed changes *who* runs a lens and how

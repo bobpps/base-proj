@@ -122,12 +122,28 @@ emit_gate() {
 #
 # Everything below classifies against refs. Classifying before fetching reads a branch that exists
 # only on the remote as absent, and the run then creates a different branch wearing the same name.
+ref_exists() { git -C "$REPO" show-ref --verify --quiet "$1"; }
+
 git -C "$REPO" fetch --prune "$REMOTE" >/dev/null 2>&1 || {
   echo "fetch from $REMOTE failed" >&2
   exit 2
 }
 
-ref_exists() { git -C "$REPO" show-ref --verify --quiet "$1"; }
+# A configured refspec is not a promise about what exists on the server. `git clone --single-branch`
+# leaves `remote.<name>.fetch` covering one branch, so the fetch above succeeds while creating no
+# remote-tracking ref for the task branch — which then classifies as absent, the run implements
+# against a fresh namesake, and the collision surfaces only when the push is rejected at the end of
+# an otherwise finished run. So ask for the two refs this procedure needs, by name.
+#
+# Best-effort: either may legitimately be missing. A task branch usually does not exist yet, and a
+# missing base is caught below with a message that says so. Connectivity was proved above, so a
+# failure here means the ref is not there rather than that the server is unreachable.
+for ref in "$BASE" "$BRANCH"; do
+  if ! ref_exists "refs/remotes/$REMOTE/$ref"; then
+    git -C "$REPO" fetch "$REMOTE" \
+      "+refs/heads/$ref:refs/remotes/$REMOTE/$ref" >/dev/null 2>&1 || true
+  fi
+done
 
 local_exists=false; ref_exists "refs/heads/$BRANCH" && local_exists=true
 remote_exists=false; ref_exists "refs/remotes/$REMOTE/$BRANCH" && remote_exists=true

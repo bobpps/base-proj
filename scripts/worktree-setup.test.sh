@@ -237,7 +237,23 @@ else
 fi
 rm -rf "$D"
 
-# --- 15. a root written with a trailing slash still resumes -------------------------------------
+# --- 15. a single-branch clone still sees the task branch ---------------------------------------
+#
+# `git clone --single-branch` leaves a refspec covering only the base, so a plain fetch succeeds
+# and creates no remote-tracking ref for the task branch. Classified on that, the branch reads as
+# absent and the run builds a namesake — a collision that surfaces only when the push is rejected.
+D="$(new_fixture)"
+push_commit "$D" feat/x work.txt remote-work
+rm -rf "$D/clone"
+git clone --quiet --single-branch --branch main "$D/remote.git" "$D/clone"
+git -C "$D/clone" config user.email t@t; git -C "$D/clone" config user.name t
+run "$D/clone"
+check  "single-branch clone: exit 0" "0"                   "$RC"
+check  "single-branch clone: finds the branch on the server" "created-from-remote" "$(field case)"
+exists "single-branch clone: carries the remote work" "$(field worktree)/work.txt"
+rm -rf "$D"
+
+# --- 16. a root written with a trailing slash still resumes -------------------------------------
 #
 # `.worktrees/` is how a directory is naturally written and is the initializer's own default. An
 # unnormalised root builds `<root>//<branch>` while `git worktree list` reports the single-slash

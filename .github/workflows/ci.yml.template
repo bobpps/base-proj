@@ -76,6 +76,11 @@ jobs:
       - name: Worktree procedure
         run: bash scripts/worktree-setup.test.sh
 
+      # Same reasoning: this one decides whether a review agent quietly edited the tree, and its
+      # two known failure modes both looked correct in prose.
+      - name: Review snapshot
+        run: bash scripts/review-snapshot.test.sh
+
       - name: Type correctness
         run: "{{CMD_TYPECHECK}}"
 

@@ -107,11 +107,11 @@ against what phases 2–4 just concluded rather than overwriting it.
 **Phase 6 — prove it.** Run the proving commands from `AGENTS.md` in proportion to risk, and
 report each with its outcome and where it ran. `evidence.md` governs what each result means.
 
-**Phase 7 — review.** Record the three signals `subagent-briefs.md` names — status, `HEAD`, and a
-hash of the diff — before launching the passes, launch them concurrently, and compare all three
-afterwards. A tree that moved means an agent exceeded its role, and that needs to be known before
-those changes reach the diff. The status alone will not tell you: a reviewer editing a file that
-was already modified leaves the porcelain line byte-identical.
+**Phase 7 — review.** Run `scripts/review-snapshot.sh` before launching the passes, launch them
+concurrently, run it again afterwards, and compare the `snapshot=` line. A moved snapshot means an
+agent exceeded its role, and that needs to be known before those changes reach the diff. Do not
+assemble the comparison by hand — `subagent-briefs.md` records the two ways doing so has already
+been wrong.
 
 **A Small run skips this fan-out**, for the reason it skips the debate. Self-review the diff
 against the five axes in `failure-axes.md` and record that as the review, findings and all, in the
