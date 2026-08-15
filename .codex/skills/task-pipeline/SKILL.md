@@ -57,9 +57,14 @@ rule, and the rule is the weaker mechanism — so state it, and hold to it delib
 Run the phases of the classified mode from `checkpoints.md`, publishing each checkpoint in the
 shape `checkpoint-formats.md` fixes.
 
-**Phases 1–4 — read-only.** Read context, extract requirements, run the four-role debate as
-concurrent subagents briefed from `subagent-briefs.md`, print the gate if one is triggered, then
-publish the implementation plan.
+**Phases 1–4 — read-only.** Read context, extract requirements, print the gate if one is
+triggered, then publish the implementation plan.
+
+For **Normal and Risky**, run the four-role debate as concurrent subagents briefed from
+`subagent-briefs.md`. **A Small run skips it** while it stays clearly isolated and low-risk —
+four agents on a typo cost more than they find, which is what `checkpoints.md` defines the mode
+for. Do the same analysis here, say in the checkpoint that the debate was skipped and why, and
+escalate out of Small the moment ambiguity, coupling, or risk appears.
 
 Who approves that plan depends on the run, per phase 4 of `checkpoints.md`:
 
@@ -98,6 +103,10 @@ report each with its outcome and where it ran. `evidence.md` governs what each r
 **Phase 7 — review.** Record `git status --porcelain` and the diff before launching the passes,
 launch them concurrently, and compare afterwards. A tree that moved means an agent exceeded its
 role, and that needs to be known before those changes reach the diff.
+
+**A Small run skips this fan-out**, for the reason it skips the debate. Self-review the diff
+against the five axes in `failure-axes.md` and record that as the review, findings and all, in the
+same shape. What a Small run never skips is the review loop in phase 11.
 
 **Phases 8–9 — adjudicate, then apply only what was accepted.** The termination rule in
 `checkpoints.md` is mechanical. Apply it rather than judging each round on how it felt.

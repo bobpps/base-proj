@@ -83,16 +83,28 @@ silence.
 
 ## Phases 1–4: inside plan mode
 
-Enter plan mode with `EnterPlanMode` before reading, for Normal and Risky runs. Two things follow
-from that, and both are the point: the read-only phases become read-only **by construction**
-rather than by intention, and phase 4 gets a native approval gate.
+Enter plan mode with `EnterPlanMode` before reading — **on every run, in every mode.** An
+Analysis-only run enters and never leaves.
+
+Two things follow, and both are the point: the read-only phases become read-only **by
+construction** rather than by intention, and phase 4 gets a native transition out of them.
+
+The uniformity is deliberate. Entering only for the larger modes leaves a Small run reaching phase
+4 with no plan-mode session to exit, and a mode-dependent branch is precisely the thing that turns
+out to be wrong in the case nobody exercised. One extra tool call on a typo fix is cheaper than
+that branch.
 
 - **Phase 1** — read context. Delegate the wide search to an `Explore` subagent when the relevant
   code could be anywhere; it reads excerpts and returns locations, which is the shape of that
   question. Do not delegate the instruction and decision files.
-- **Phase 2** — publish the requirements analysis, then launch the four debate roles **in a single
-  message** so they run concurrently and independently. Brief them from
+- **Phase 2** — publish the requirements analysis. For **Normal and Risky**, launch the four
+  debate roles **in a single message** so they run concurrently and independently, briefed from
   `docs/engineering/subagent-briefs.md`.
+
+  **A Small run skips the debate** while it stays clearly isolated and low-risk: four agents on a
+  typo cost more than they find, which is what `checkpoints.md` defines the mode for. Do the same
+  analysis in this session, say in the checkpoint that the debate was skipped and why, and
+  escalate out of Small the moment ambiguity, coupling, or risk appears.
 - **Phase 3** — the gate. Use `AskUserQuestion`, carrying what
   `docs/engineering/asking-questions.md` requires: the fork map, position and settled-so-far in
   each heading, two to four options that describe consequences and name what they do not fix,
@@ -180,8 +192,14 @@ Capture `git status --porcelain` and the diff **before** launching, and compare 
 Reviewers advise; if the tree moved, an agent exceeded its role, and that needs to be known before
 those changes reach the diff.
 
-Launch the passes in one message. `docs/engineering/subagent-briefs.md` has which specialist fits which
-pass and how to brief the rest.
+For **Normal and Risky**, launch the passes in one message.
+`docs/engineering/subagent-briefs.md` has which specialist fits which pass and how to brief the
+rest.
+
+**A Small run skips this fan-out too**, for the reason it skips the debate. Self-review the diff
+instead — against the five axes in `failure-axes.md` — and record that as the review, findings and
+all, in the same shape. What a Small run never skips is the review loop in phase 11: a small change
+is reviewed by the same reviewer as a large one, and its findings need the same adjudication.
 
 ## Phases 8–9: adjudicate, then fix only what was accepted
 
