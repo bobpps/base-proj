@@ -98,6 +98,10 @@ person reverses it without seeing what they are buying.
 ## `AGENTS.md` specifics
 
 - The **Remote** row takes `derived` or a server name, per question 3.3.
+- The **Worktree root** row takes question 3.6 — **and so does `.gitignore`.** The template ignores
+  `.worktrees/` by name, so a human who changes the root gets task worktrees created as untracked
+  content inside the main checkout, where they clutter every `git status` and sit one careless
+  `git add` away from the commit. The value lives in two files and has to move in both.
 - The **proving commands** table takes all eight. A role with no command says, in those words, that
   this project cannot prove it — never a neighbouring command.
 - **Where each is proved** takes block 6, and its reasoning goes in the decision record rather than

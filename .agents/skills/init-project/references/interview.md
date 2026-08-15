@@ -158,8 +158,17 @@ next agent reads to decide what is available.
 
 | # | Question | Type |
 | --- | --- | --- |
-| 6.1 | Which roles can only be proved in CI | multi-select over the eight roles |
+| 6.1 | Which roles can only be proved in CI | multi-select over **seven** of the eight roles |
 | 6.2 | Why — what the developer machine lacks | free text |
+
+**`Single test or file` is not among the choices.** It is the command that serves the inner loop —
+run this one test, now, while thinking about it — and CI has no use for it, because CI runs all of
+them. There is no workflow step that could execute it, so offering it would let a project record a
+role as proved in CI that no job invokes.
+
+If someone says this project genuinely cannot run a single test locally, that is not a
+configuration answer. It means the project has no local inner loop, which is worth writing down
+plainly in `AGENTS.md` rather than encoding as a CI line that nothing executes.
 
 Both answers go into `AGENTS.md`, and 6.2 also becomes a decision record. A line drawn without its
 reason gets crossed by the first person in a hurry.

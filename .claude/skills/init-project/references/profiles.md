@@ -20,11 +20,26 @@ observation. A profile that maps two roles to one command has not proved two thi
 | Artifact smoke | `npm run smoke` — a script that starts each built artifact |
 | Integration / data layer | asked; commonly a database CLI's test command |
 
-Supporting: `npm ci`, `npm run format`.
+Supporting (`{{CMD_SUPPORTING}}`): `npm ci`, `npm run format`.
+Setup (`{{SETUP_COMMANDS}}`, for `README.md`): `nvm use && npm ci`.
+Format, write mode (`{{CMD_FORMAT}}`): `npm run format` → `prettier --write .`.
 
 Node version pinned in `.nvmrc`; CI reads it with `node-version-file` rather than a literal, so the
 two cannot drift. Manifest is `package.json` with `"type": "module"` and, for the workspace layout,
 a `workspaces` array.
+
+### Generate the lockfile before finishing
+
+`npm ci` — the supporting command, and the install step in CI — **fails outright without a
+lockfile**: *the npm ci command can only install with an existing package-lock.json or
+npm-shrinkwrap.json*, exit 1. Writing `package.json` alone therefore produces a project whose
+documented setup command and whose CI both fail on the first run, and the failure looks like a
+broken workflow rather than like a missing file.
+
+So run `npm install` once after writing the manifest, and leave `package-lock.json` in place for
+the first commit. Where that cannot run — no network, no toolchain on this machine — say so in the
+final report as an unmet prerequisite, in the same shape as a missing remote: the project is
+configured, and it will not install until somebody generates the lockfile.
 
 CI setup step:
 
@@ -72,7 +87,13 @@ failure the whole doctrine exists to prevent — and a profile is not exempt fro
 | Artifact smoke | `dotnet <path-to-dll> --version`, or an equivalent that starts the produced binary |
 | Integration / data layer | asked; commonly `dotnet test` over a category, with containers |
 
-Supporting: `dotnet restore`. Version pinned in `global.json`; CI sets it up from that file.
+Supporting (`{{CMD_SUPPORTING}}`): `dotnet restore`.
+Setup (`{{SETUP_COMMANDS}}`, for `README.md`): `dotnet restore`.
+Format, write mode (`{{CMD_FORMAT}}`): `dotnet format`.
+
+Version pinned in `global.json`; CI sets it up from that file. There is no lockfile step here —
+`dotnet restore` resolves from the manifest, which is why the Node profile needs one and this one
+does not.
 
 CI setup step:
 
@@ -96,7 +117,18 @@ They differ from the Node profile in ways that quietly weaken the doctrine if le
 
 ## Other
 
-No defaults. Ask for all eight.
+No defaults. Ask for all eight — **and for the three values that are not roles**, because
+`README.md` and `AGENTS.md` carry them and a run that skips them cannot pass its own verification:
+
+| Value | What it is |
+| --- | --- |
+| `{{SETUP_COMMANDS}}` | what a person runs once, in a fresh clone, before anything else works |
+| `{{CMD_FORMAT}}` | formatting in write mode, as opposed to the format **check** among the eight |
+| `{{CMD_SUPPORTING}}` | install, restore, and whatever else the other commands assume has run |
+
+The other two profiles answer these from their defaults. This one has no defaults to answer from,
+so it asks — and leaving them is not an option, because they are not roles and there is no "this
+project cannot prove it" to record.
 
 Any role the human leaves blank is recorded in `AGENTS.md` as a role **this project cannot prove**,
 in those words. `evidence.md` requires that phrasing: a blank row reads as an oversight, and "we
