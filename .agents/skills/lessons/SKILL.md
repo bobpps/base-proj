@@ -169,12 +169,26 @@ one directory rather than by running the generator, and a shared rule is changed
 one; the file will not, and a rule whose incident is forgotten is deleted in the next cleanup by
 someone who can see its cost and not its reason.
 
-**Where a rule states a checkable property, check it.** This repository's own history is the
-argument: five separate review rounds each found a different unfillable placeholder, and the class
-closed only when one list was compared against another by a script. If an applied recommendation
-can be expressed as a test under `scripts/`, write the test as part of applying it.
+**Where a rule states a checkable property, say so — and propose the check rather than writing it.**
+This repository's own history is the argument for the first half: five separate review rounds each
+found a different unfillable placeholder, and the class closed only when one list was compared
+against another by a script. A rule that could be checked and is not gets rediscovered by whoever
+next breaks it.
 
-Do not commit. This project commits on an explicit request.
+The second half is an ownership boundary rather than modesty. A check under `scripts/` is
+executable code that runs in everyone's CI, and this is a bulk pass over a whole archive — no plan,
+no proving commands, no review fan-out. Those are exactly what a code change in this repository goes
+through, and a pass that skipped them could turn every build red on the strength of one report's
+suggestion.
+
+So write the proposal into the protocol precisely enough to act on without re-deriving it: the
+property, the file it belongs beside, what a failure would have to say, and which reports asked for
+it. A task run implements it. The cost is real and worth naming: the property stays unchecked until
+somebody picks that task up. It is a delay, not a loss — and the proposal is on disk rather than in
+one pass's memory.
+
+Do not commit, and do not edit anything under `scripts/`. This project commits on an explicit
+request.
 
 ## 6 · Write the protocol, then mark
 
@@ -189,6 +203,8 @@ finishes, carrying:
   satisfies it.
 - what was deferred, quoting the recommendation verbatim so a later pass can act without
   re-reading the report.
+- **any check this pass proposed but did not write**, in the shape described above. It is the only
+  record that the property was noticed, and it is the input a task run needs.
 - any doctrine change the human approved, and the decision record it produced.
 - any cross-group pairing.
 
@@ -205,7 +221,8 @@ edits land manufactures exactly the loss this skill exists to prevent.
 
 ## Boundaries
 
-Does not commit or push. Does not touch the tracker. Does not edit `docs/decisions/` except by
-adding a new record for an approved doctrine change. Does not edit report content — only the
-`**Applied:**` lines it owns. Does not run during a pipeline. Does not apply a doctrine edit
-without the human's answer.
+Does not commit or push. Does not touch the tracker. Does not edit code, `scripts/` included — a
+check it wants is proposed in the protocol and written by a task run. Does not edit
+`docs/decisions/` except by adding a new record for an approved doctrine change. Does not edit
+report content — only the `**Applied:**` lines it owns. Does not run during a pipeline. Does not
+apply a doctrine edit without the human's answer.
