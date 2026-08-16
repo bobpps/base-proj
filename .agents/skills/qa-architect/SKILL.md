@@ -29,8 +29,14 @@ worktree. If something here fails, say so in one line and return.
 
 `<task-id>` is required — derive it from the branch when the branch matches the project's pattern
 in `AGENTS.md`, and say which id was derived. `<worktree-path>` defaults to the repository root;
-everything is read and written under it, so a pipeline run can commit the result onto its branch
-before the worktree disappears.
+everything is read and written under it.
+
+**Whoever invokes this owns the commit.** No pipeline edition runs it automatically — a QA package
+is worth writing when a change is user-observable, which most runs are not, so it is asked for
+rather than produced by default. Say the paths back to the caller and say the files are
+uncommitted. **When the invocation is inside a task worktree, say so explicitly**: that worktree is
+removed at the end of the run, so documents nobody stages disappear with it, exactly as an
+uncommitted retrospective would.
 
 Two files belong to this task:
 

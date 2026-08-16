@@ -23,16 +23,21 @@
  * noticing. Turn it on when a Codex run genuinely needs those skills, record the
  * decision, and re-run deliberately rather than on a schedule.
  *
- * When anything is vendored, `.agents/skills/.vendored` records it as a `sha256sum`-format
- * manifest: one `<hex>  <path>` line per file, paths relative to `.agents/skills/`.
+ * When anything is vendored, `.agents/skills/.vendored` records the whole copied tree, one
+ * entry per line, paths relative to `.agents/skills/`:
+ *
+ *   d <path>              a directory
+ *   f <sha256> <path>     a regular file, with the digest of its contents
+ *
  * Nothing here reads that file — it exists so `scripts/skills.test.sh` can tell a
  * deliberately vendored skill from a directory somebody added by hand, which are otherwise
  * the same thing: a skill in the generated tree with no source in this repository.
  *
- * It records contents rather than names because a name alone only proves the directory is
- * still there. The vendored copy is committed and lives in the repository like any other
- * file, so a hand edit inside it is exactly as likely as one anywhere else, and a check
- * that accepted the directory by name would be blind to it.
+ * What it has to describe is everything the check claims: **the tree the generator would
+ * write — its entries, their types, and their contents.** Each of those was learned by
+ * having the narrower version found wanting. Names alone miss a hand edit inside a vendored
+ * skill; contents alone miss a file replaced by a symlink to identical bytes; files alone
+ * miss an empty directory that regeneration removes.
  *
  * The manifest is written inside the directory this script clears and rebuilds, so it
  * cannot outlive the tree it describes.
@@ -124,17 +129,21 @@ async function isSuperseded(skillDir) {
 }
 
 /**
- * Every file under `dir`, at any depth, as absolute paths.
+ * `dir` itself and every entry beneath it, at any depth.
+ *
+ * Directories are included, not just files. The manifest describes a whole copied tree, and a tree
+ * is not only its files: an empty directory the generator would remove is drift that a file list
+ * cannot express. Copying dereferences, so every entry here is a directory or a regular file.
  *
  * @param {string} dir
- * @returns {Promise<string[]>}
+ * @returns {Promise<Array<{ path: string, isDir: boolean }>>}
  */
-async function filesUnder(dir) {
-  const out = [];
+async function entriesUnder(dir) {
+  const out = [{ path: dir, isDir: true }];
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await filesUnder(full)));
-    else if (entry.isFile()) out.push(full);
+    if (entry.isDirectory()) out.push(...(await entriesUnder(full)));
+    else out.push({ path: full, isDir: false });
   }
   return out;
 }
@@ -199,9 +208,16 @@ async function main() {
   if (vendored.length > 0) {
     const lines = [];
     for (const name of vendored) {
-      for (const file of (await filesUnder(path.join(targetDir, name))).sort()) {
-        const digest = createHash('sha256').update(await fs.readFile(file)).digest('hex');
-        lines.push(`${digest}  ${path.relative(targetDir, file)}`);
+      const entries = await entriesUnder(path.join(targetDir, name));
+      entries.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+      for (const entry of entries) {
+        const rel = path.relative(targetDir, entry.path);
+        if (entry.isDir) {
+          lines.push(`d ${rel}`);
+        } else {
+          const digest = createHash('sha256').update(await fs.readFile(entry.path)).digest('hex');
+          lines.push(`f ${digest} ${rel}`);
+        }
       }
     }
     await fs.writeFile(path.join(targetDir, '.vendored'), `${lines.join('\n')}\n`);

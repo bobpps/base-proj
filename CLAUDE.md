@@ -26,7 +26,7 @@ Shared product, architecture, security, and validation instructions live in `AGE
 | Implement a task through to a reviewed pull request | `task-pipeline` | human, or by request |
 | A finished run needs its retrospective | `retrospective` | by the pipeline at phase 12, or a human |
 | Accumulated retrospectives should improve the skills and the doctrine | `lessons` | human only |
-| A finished feature needs a human test plan | `qa-architect` | human, or a pipeline wind-down |
+| A finished feature needs a human test plan | `qa-architect` | human, or by request |
 | Documentation may have drifted from the code | `docs-audit` | human only |
 | A harsh architectural read of recent changes | `code-critic` | human only |
 

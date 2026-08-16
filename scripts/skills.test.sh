@@ -238,54 +238,56 @@ expected=""
 VENDOR_MARKER="$ROOT/.agents/skills/.vendored"
 vendored=""
 if [ -f "$VENDOR_MARKER" ]; then
-  vendored="$(sed 's/^[0-9a-f]*  //' "$VENDOR_MARKER" | cut -d/ -f1 | LC_ALL=C sort -u | tr '\n' ' ')"
-
   # sha256 of a file's bytes is the same number whoever computes it, so this is a shared standard
   # rather than a reimplementation of the generator. Prefer coreutils, accept the BSD spelling, and
   # say plainly when neither is here — a content check nobody ran must not read as one that passed.
-  if command -v sha256sum >/dev/null 2>&1; then VERIFY="sha256sum -c"
-  elif command -v shasum >/dev/null 2>&1;   then VERIFY="shasum -a 256 -c"
-  else VERIFY=""
+  if command -v sha256sum >/dev/null 2>&1; then DIGEST="sha256sum"
+  elif command -v shasum >/dev/null 2>&1;   then DIGEST="shasum -a 256"
+  else DIGEST=""
   fi
+  [ -n "$DIGEST" ] || skip "vendored skill contents match the manifest" \
+    "neither sha256sum nor shasum is installed, so file contents could not be verified"
 
-  if [ -n "$VERIFY" ]; then
-    # Results go to stdout as `<path>: OK` or `<path>: FAILED`; the summary warning goes to stderr
-    # and is noise here, because every path it summarises is already on stdout.
-    bad="$( (cd "$ROOT/.agents/skills" && $VERIFY .vendored 2>/dev/null) \
-            | grep -v ': OK$' | sed 's/: FAILED.*//' | LC_ALL=C sort -u | tr '\n' ' ' )"
-    [ -z "${bad// /}" ] || drift="$drift (vendored, content differs: ${bad% })"
-  else
-    skip "vendored skill contents match the manifest" \
-         "neither sha256sum nor shasum is installed, so the manifest could not be verified"
-  fi
+  # Three claims, checked separately because each was learned by having a narrower version found
+  # wanting: the tree's **entries**, their **types**, and their **contents**.
+  listed=""
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      "d "*)
+        p="${line#d }"
+        listed="$listed$p"$'\n'
+        if [ -L "$ROOT/.agents/skills/$p" ] || [ ! -d "$ROOT/.agents/skills/$p" ]; then
+          drift="$drift $p(vendored, not a directory)"
+        fi
+        ;;
+      "f "*)
+        rest="${line#f }"; want="${rest%% *}"; p="${rest#* }"
+        listed="$listed$p"$'\n'
+        if [ -L "$ROOT/.agents/skills/$p" ] || [ ! -f "$ROOT/.agents/skills/$p" ]; then
+          # A symlink to identical bytes passes a content check. Type is its own claim.
+          drift="$drift $p(vendored, not a regular file)"
+        elif [ -n "$DIGEST" ]; then
+          got="$($DIGEST "$ROOT/.agents/skills/$p" | cut -d' ' -f1)"
+          [ "$got" = "$want" ] || drift="$drift $p(vendored, content differs)"
+        fi
+        ;;
+      '') ;;
+      *) drift="$drift (vendored manifest has an unreadable line: $line)" ;;
+    esac
+  done < "$VENDOR_MARKER"
 
-  # The manifest lists what belongs; anything added inside a vendored skill is listed nowhere, so
-  # the verification above cannot see it. Compare the sets in the other direction too.
-  #
-  # `! -type d` rather than `-type f`, so a symlink counts as an entry. The generator dereferences
-  # while copying, which means every entry it writes is a regular file — so a symlink appearing here
-  # is drift by definition. Looking only for regular files missed it twice over: the manifest never
-  # listed it and the reverse comparison never saw it.
-  listed="$(sed 's/^[0-9a-f]*  //' "$VENDOR_MARKER" | LC_ALL=C sort)"
+  vendored="$(printf '%s' "$listed" | cut -d/ -f1 | LC_ALL=C sort -u | tr '\n' ' ')"
+  listed="$(printf '%s' "$listed" | LC_ALL=C sort)"
+
+  # The manifest says what belongs; it cannot see what was added. Compare the sets the other way
+  # too, over every entry type — `find` with no type filter, so a stray file, an added symlink, and
+  # an empty directory are all visible. Each of those three passed a narrower version of this check.
   for name in $vendored; do
-    if [ ! -d "$ROOT/.agents/skills/$name" ]; then
-      drift="$drift $name(vendored, absent)"
-      continue
-    fi
-    present="$(cd "$ROOT/.agents/skills" && find "$name" ! -type d | LC_ALL=C sort)"
+    [ -d "$ROOT/.agents/skills/$name" ] || { drift="$drift $name(vendored, absent)"; continue; }
+    present="$(cd "$ROOT/.agents/skills" && find "$name" | LC_ALL=C sort)"
     extra="$(comm -13 <(printf '%s\n' "$listed") <(printf '%s\n' "$present") | tr '\n' ' ')"
     [ -z "${extra// /}" ] || drift="$drift $name(vendored, unlisted entries: ${extra% })"
   done
-
-  # A listed path that is no longer a regular file passes the content check whenever the link points
-  # at identical bytes, so the type is checked on its own. Content and type are two claims.
-  while IFS= read -r p; do
-    [ -n "$p" ] || continue
-    [ -e "$ROOT/.agents/skills/$p" ] || continue     # absence is already reported above
-    if [ -L "$ROOT/.agents/skills/$p" ] || [ ! -f "$ROOT/.agents/skills/$p" ]; then
-      drift="$drift $p(vendored, not a regular file)"
-    fi
-  done <<< "$listed"
 fi
 
 for tree in .codex/skills .claude/skills; do
