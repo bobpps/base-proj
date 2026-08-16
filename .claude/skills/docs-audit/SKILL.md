@@ -42,23 +42,34 @@ When it is genuinely unclear which side is authoritative, that ambiguity is the 
 a rotted list is worse than no list because it reads as complete:
 
 ```bash
-git ls-files '*.md' | grep -v '^docs/engineering/\|^docs/decisions/\|^tasks/'
+git ls-files '*.md' | grep -v '^docs/engineering/\|^docs/decisions/\|^tasks/\|^\.agents/'
 ```
 
 Then narrow by what the human asked for, and by what `AGENTS.md`'s **Documentation** section says
 each file is for — a file's purpose decides which of its claims are even checkable.
 
-Three directories are deliberately out of scope, each for a different reason:
+Four paths are deliberately out of scope, each for a different reason:
 
 | Excluded | Why |
 | --- | --- |
 | `docs/engineering/` | Doctrine. It describes how work is proved, not what this repository contains — there is nothing in it for the code to drift from, and it changes through the retrospective loop rather than through an audit. |
 | `docs/decisions/` | Historical records. A record describing a decision that has since been reversed is **correct**: it says what was decided then. The repair for a changed decision is a new record superseding it, not an edit to the old one. |
 | `tasks/` | Run artifacts. Each was true at its checkpoint, and `evidence.md` depends on that staying so. |
+| `.agents/` | Generated. Editing it produces one of two outcomes and neither is a repair: the drift check fails, or the next regeneration silently reverts the fix. |
 
 Everything else is in scope, `AGENTS.md` and `README.md` included. `AGENTS.md` in particular
 carries the proving commands, the branch conventions, and the worktree root — all of them
 verifiable, and all of them load-bearing for every future run.
+
+**A generated path given as a target is redirected, not refused.** When the human passes something
+under `.agents/skills/<name>/`, the stale claim is real and lives in the source — `.codex/skills/<name>/`
+where that exists, otherwise `.claude/skills/<name>/`. Audit and repair the source, say in the
+report that the target was redirected and to where, then propagate as `writing-skills.md` requires:
+copy that one skill's directory across by hand rather than regenerating the whole tree.
+
+That propagation is not optional bookkeeping. `scripts/skills.test.sh` compares the generated tree
+against its sources, so a repaired skill whose copy was left behind turns a green audit into a red
+build.
 
 ## Extract the claims
 
@@ -155,7 +166,8 @@ so a run can be compared with the one before it.
 
 ## Boundaries
 
-Never edits code, only documentation. Never edits `docs/engineering/`, `docs/decisions/`, or
-`tasks/`. Never applies a migration, runs a mutation, or writes to any external system — every
+Never edits code, only documentation. Never edits `docs/engineering/`, `docs/decisions/`, `tasks/`,
+or anything under `.agents/` — a repair there is either reverted by the next regeneration or shows
+up as drift. Never applies a migration, runs a mutation, or writes to any external system — every
 authority here is read. Never commits or pushes. Never resolves a rule-versus-code mismatch on the
 human's behalf.
