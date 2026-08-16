@@ -1,25 +1,33 @@
 {
   "enableAllProjectMcpServers": true,
-  "enabledPlugins": {},
+  "enabledPlugins": {
+    "feature-dev@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "supabase@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "linear@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true
+  },
   "permissions": {
     "allow": [
+      "Bash(*)",
       "Read",
+      "Write",
+      "Edit",
       "Glob",
       "Grep",
-      "Skill",
       "Task",
-      "WebSearch",
       "WebFetch(*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git branch:*)",
-      "Bash(git worktree:*)",
-      "Bash(gh issue view:*)",
-      "Bash(gh pr view:*)",
-      "Bash(gh pr checks:*)",
-      "Bash(gh run list:*)",
-      "Bash(gh run watch:*)"
+      "WebSearch",
+      "Skill",
+      "PowerShell(*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh api repos/*/pulls/*/comments:*)",
+      "mcp__plugin_github_github__*",
+      "mcp__plugin_linear_linear__*",
+      "mcp__plugin_context7_context7__*",
+      "mcp__plugin_Notion_notion__*",
+      "mcp__plugin_supabase_supabase__*"
     ]
   }
 }
