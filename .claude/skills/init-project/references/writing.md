@@ -97,6 +97,11 @@ Rewrite that section to describe what remains. This is the same rule as the skil
 must match the disk — and it is easier to miss here because the section is prose rather than a
 table, so nothing about its shape suggests it holds an inventory.
 
+Afterwards `scripts/skills.test.sh` reports its generated-tree comparison as **skipped**, naming the
+absent contour as the reason. That is the correct result and not something to repair: with no
+`.codex/` and no `.agents/`, there is no generated tree to compare. Leave the check in place — the
+project may turn the contour back on, and a deleted check does not come back with it.
+
 **The same paragraph names every supporting skill**, so turning the QA contour off means editing it
 too, not only deleting `.claude/skills/qa-architect/` and its `CLAUDE.md` row. `scripts/skills.test.sh`
 checks the table against the disk; it cannot check a sentence, which is why this is written down.

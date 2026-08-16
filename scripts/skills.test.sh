@@ -23,9 +23,14 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PASS=0
 FAIL=0
+SKIP=0
 
 pass() { PASS=$((PASS + 1)); printf '  ok    %s\n' "$1"; }
 fail() { FAIL=$((FAIL + 1)); printf '  FAIL  %s\n          %s\n' "$1" "${2-}"; }
+# A check that did not run is its own outcome, per `docs/engineering/evidence.md`. Counting it as a
+# pass would report a configuration as verified that nothing looked at, and that is the one of the
+# four outcomes that always gets quietly dropped.
+skip() { SKIP=$((SKIP + 1)); printf '  skip  %s\n          %s\n' "$1" "${2-}"; }
 
 # The body is everything after the leading frontmatter block. The frontmatter is metadata that is
 # always loaded and is budgeted separately; counting it against the body's ceiling would charge the
@@ -179,7 +184,21 @@ fi
 # IGNORE is read out of the generator rather than restated here. Restating it would make this check
 # disagree with the tool it is checking the moment somebody adds an entry — it would report the
 # skill as missing from `.agents/` while the generator was correctly leaving it out.
+#
+# The whole section is conditional, because a repository with the Codex contour turned off has no
+# generated tree to check: `init-project` deletes `.codex/` and `.agents/` together. Running the
+# comparison anyway would derive every `.claude` skill as expected and report all of them absent,
+# failing a repository that was initialized exactly as the interview prescribes.
 GENERATOR="$ROOT/scripts/copy-skills-to-agents.mjs"
+
+if [ ! -d "$ROOT/.agents/skills" ] && [ ! -d "$ROOT/.codex/skills" ]; then
+  skip "the generated tree matches its sources" \
+       "no .agents/skills and no .codex/skills — the Codex contour is off in this project"
+elif [ ! -f "$GENERATOR" ]; then
+  fail "the generated tree matches its sources" \
+       "a generated tree exists but ${GENERATOR#"$ROOT"/} does not, so nothing can say what belongs in it"
+else
+
 ignore_block="$(awk '/^const IGNORE = \{/ { inside=1; found=1; next }
                      inside && /^\};/    { inside=0; next }
                      inside              { print }
@@ -227,6 +246,12 @@ else
   fail ".agents/skills matches what the generator would write" "run scripts/copy-skills-to-agents.mjs —$drift"
 fi
 
+fi
+
 echo
-echo "  $PASS passed, $FAIL failed"
+if [ "$SKIP" -gt 0 ]; then
+  echo "  $PASS passed, $FAIL failed, $SKIP skipped"
+else
+  echo "  $PASS passed, $FAIL failed"
+fi
 [ "$FAIL" -eq 0 ]
