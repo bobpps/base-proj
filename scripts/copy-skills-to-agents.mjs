@@ -23,6 +23,13 @@
  * noticing. Turn it on when a Codex run genuinely needs those skills, record the
  * decision, and re-run deliberately rather than on a schedule.
  *
+ * When anything is vendored, the names are recorded in `.agents/skills/.vendored`, one
+ * per line. Nothing here reads that file — it exists so `scripts/skills.test.sh` can tell
+ * a deliberately vendored skill from a directory somebody added by hand, which are
+ * otherwise the same thing: a skill in the generated tree with no source in this
+ * repository. It is written inside the directory this script clears and rebuilds, so it
+ * cannot outlive the tree it describes.
+ *
  * Two kinds of skill are skipped rather than copied:
  *   - anything named in IGNORE below, when a Codex-native replacement supersedes it;
  *   - anything whose SKILL.md frontmatter carries `superseded-by:`, which is how this
@@ -151,6 +158,18 @@ async function main() {
 
   for (const [name, { from }] of [...chosen].sort(([a], [b]) => a.localeCompare(b))) {
     await fs.cp(from, path.join(targetDir, name), { recursive: true });
+  }
+
+  // Record what came from outside the repository, so the drift check can tell a vendored skill
+  // from a hand-added directory. Written only when there is something to record: an empty marker
+  // and an absent one mean the same thing, and two ways of saying it is one way too many.
+  const vendored = [...chosen]
+    .filter(([, { label }]) => label === 'plugins' || label === 'user')
+    .map(([name]) => name)
+    .sort((a, b) => a.localeCompare(b));
+
+  if (vendored.length > 0) {
+    await fs.writeFile(path.join(targetDir, '.vendored'), `${vendored.join('\n')}\n`);
   }
 
   const width = Math.max(0, ...[...chosen.keys()].map((n) => n.length));

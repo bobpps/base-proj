@@ -220,6 +220,26 @@ ignored="$(printf '%s\n' "$ignore_block" \
 
 drift=""
 expected=""
+
+# Skills vendored from a plugin cache or the user's own global directory, when block 5's vendoring
+# contour is on. They belong in the generated tree and have no source in this repository, so without
+# the generator's own record of them they are indistinguishable from a hand-added directory — and
+# labelling them `unexpected` would leave every project that chose that contour with a permanently
+# red CI step.
+#
+# Reading the record rather than the source is deliberate. The sources are one machine's home
+# directory; CI has no such home, so a check that looked there would report every vendored skill
+# absent instead — failing in the opposite direction and in the place that matters more.
+VENDOR_MARKER="$ROOT/.agents/skills/.vendored"
+vendored=""
+if [ -f "$VENDOR_MARKER" ]; then
+  while IFS= read -r name || [ -n "$name" ]; do
+    case "$name" in ''|'#'*) continue ;; esac
+    vendored="$vendored $name"
+    [ -d "$ROOT/.agents/skills/$name" ] || drift="$drift $name(vendored, absent)"
+  done < "$VENDOR_MARKER"
+fi
+
 for tree in .codex/skills .claude/skills; do
   while read -r dir; do
     [ -n "$dir" ] || continue
@@ -236,17 +256,26 @@ for tree in .codex/skills .claude/skills; do
   done <<< "$(skill_dirs "$tree")"
 done
 
+# A name in the marker that this repository also owns is a contradiction: the repository sources win
+# in the generator, so it would never have vendored that name. Report it rather than letting a
+# hand-edited marker silence a real finding — the marker is only trustworthy as the generator's own
+# statement about what it did.
+for name in $vendored; do
+  case " $expected " in *" $name "*) drift="$drift $name(vendored, but this repository owns it)" ;; esac
+done
+
 # Every entry in the generated root, not every skill in it. The generator clears the whole directory
-# and rebuilds it, so anything that is not one of the expected skill directories is drift — and a
-# scan that looked only for directories holding a SKILL.md could not see it. A stray file added
-# under `.agents/skills/` passed this check until round 4 of the review said so.
+# and rebuilds it, so anything that is neither an expected skill directory nor a recorded vendored
+# one is drift — and a scan that looked only for directories holding a SKILL.md could not see it. A
+# stray file added under `.agents/skills/` passed this check until round 4 of the review said so.
 while IFS= read -r entry; do
   [ -n "$entry" ] || continue
   name="$(basename "$entry")"
+  [ "$name" = ".vendored" ] && continue          # the generator's own record, not a skill
   if [ ! -d "$entry" ]; then
     drift="$drift $name(stray file)"
   else
-    case " $expected " in *" $name "*) ;; *) drift="$drift $name(unexpected)" ;; esac
+    case " $expected $vendored " in *" $name "*) ;; *) drift="$drift $name(unexpected)" ;; esac
   fi
 done <<< "$(find "$ROOT/.agents/skills" -mindepth 1 -maxdepth 1 2>/dev/null | LC_ALL=C sort)"
 

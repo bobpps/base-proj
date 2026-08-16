@@ -165,6 +165,12 @@ agent to invent both the format and the rules — and the rules it would invent 
 repository's, restated from memory into a third file that then drifts from the two that are real.
 Offer it again when there is something to write.
 
+**Vendoring is applied by generating the tree, never by copying directories in.** Run
+`node scripts/copy-skills-to-agents.mjs --include-global`, which writes `.agents/skills/.vendored`
+recording what came from outside the repository. Without that record a vendored skill is
+indistinguishable from a directory somebody added by hand, and `scripts/skills.test.sh` reports
+every one of them — leaving a project that chose this contour with a permanently red CI step.
+
 **The QA package is on by default and creates nothing at setup time.** `qa-architect` writes its
 documents when a feature is finished, so what the contour decides is whether the skill stays.
 Turning it off removes more than the one directory a reader expects — `references/writing.md` has
