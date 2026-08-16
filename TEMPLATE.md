@@ -38,9 +38,10 @@ is to delete this file.
 | --- | --- |
 | `docs/engineering/` | The doctrine. Nine files, no placeholders, identical in every project — `scripts/doctrine-checksum.sh` is what keeps that true. |
 | `AGENTS.md` · `CLAUDE.md` | The rule files, as templates. |
-| `.claude/skills/` | `init-project` and `task-pipeline`. The five supporting skills named in `CLAUDE.md` — `retrospective`, `lessons`, `qa-architect`, `docs-audit`, `code-critic` — are not built yet, and that table says so per row. |
+| `.claude/skills/` | Seven skills: `init-project`, `task-pipeline`, and the five supporting ones — `retrospective`, `lessons`, `qa-architect`, `docs-audit`, `code-critic`. `CLAUDE.md` says what each is for and who may invoke it. |
 | `.codex/skills/` | The Codex edition of the pipeline, same contract. |
 | `scripts/copy-skills-to-agents.mjs` | Regenerates `.agents/skills/` so Codex can discover them. |
+| `scripts/skills.test.sh` | Fails when the skill table and the disk disagree, a body outgrows its word ceiling, a reference file is unreachable from its `SKILL.md`, or `.agents/` was edited by hand. |
 | `scripts/worktree-setup.sh` | The worktree procedure every task run uses, with `worktree-setup.test.sh` proving it. Needs only bash and git. |
 | `scripts/review-snapshot.sh` | Fingerprints the tree around the review fan-out, so a reviewer that edited instead of advising is caught rather than trusted. `review-snapshot.test.sh` proves it. |
 | `scripts/placeholders.sh` | Lists the template values still unfilled, without mistaking a GitHub Actions expression for one. `placeholders.test.sh` proves it. |

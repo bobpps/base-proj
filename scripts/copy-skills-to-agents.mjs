@@ -23,6 +23,25 @@
  * noticing. Turn it on when a Codex run genuinely needs those skills, record the
  * decision, and re-run deliberately rather than on a schedule.
  *
+ * When anything is vendored, `.agents/skills/.vendored` records the whole copied tree, one
+ * entry per line, paths relative to `.agents/skills/`:
+ *
+ *   d <path>              a directory
+ *   f <sha256> <path>     a regular file, with the digest of its contents
+ *
+ * Nothing here reads that file — it exists so `scripts/skills.test.sh` can tell a
+ * deliberately vendored skill from a directory somebody added by hand, which are otherwise
+ * the same thing: a skill in the generated tree with no source in this repository.
+ *
+ * What it has to describe is everything the check claims: **the tree the generator would
+ * write — its entries, their types, and their contents.** Each of those was learned by
+ * having the narrower version found wanting. Names alone miss a hand edit inside a vendored
+ * skill; contents alone miss a file replaced by a symlink to identical bytes; files alone
+ * miss an empty directory that regeneration removes.
+ *
+ * The manifest is written inside the directory this script clears and rebuilds, so it
+ * cannot outlive the tree it describes.
+ *
  * Two kinds of skill are skipped rather than copied:
  *   - anything named in IGNORE below, when a Codex-native replacement supersedes it;
  *   - anything whose SKILL.md frontmatter carries `superseded-by:`, which is how this
@@ -34,6 +53,7 @@
  * deletes committed skills that exist upstream. Copy the one directory by hand.
  */
 
+import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -108,6 +128,26 @@ async function isSuperseded(skillDir) {
   return /^superseded-by:\s*\S/m.test(match[1]);
 }
 
+/**
+ * `dir` itself and every entry beneath it, at any depth.
+ *
+ * Directories are included, not just files. The manifest describes a whole copied tree, and a tree
+ * is not only its files: an empty directory the generator would remove is drift that a file list
+ * cannot express. Copying dereferences, so every entry here is a directory or a regular file.
+ *
+ * @param {string} dir
+ * @returns {Promise<Array<{ path: string, isDir: boolean }>>}
+ */
+async function entriesUnder(dir) {
+  const out = [{ path: dir, isDir: true }];
+  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...(await entriesUnder(full)));
+    else out.push({ path: full, isDir: false });
+  }
+  return out;
+}
+
 async function main() {
   const includeGlobal = process.argv.includes('--include-global');
 
@@ -150,7 +190,37 @@ async function main() {
   await fs.mkdir(targetDir, { recursive: true });
 
   for (const [name, { from }] of [...chosen].sort(([a], [b]) => a.localeCompare(b))) {
-    await fs.cp(from, path.join(targetDir, name), { recursive: true });
+    // `dereference` because this tree is committed. Copied as links, symlinks are rewritten to the
+    // absolute path of the machine that ran this — observed pointing into a home directory that
+    // exists nowhere else — so the copy is broken for every other checkout the moment it lands. A
+    // vendored skill has to stand alone, and standing alone means real files.
+    await fs.cp(from, path.join(targetDir, name), { recursive: true, dereference: true });
+  }
+
+  // Record what came from outside the repository, so the drift check can tell a vendored skill
+  // from a hand-added directory. Written only when there is something to record: an empty manifest
+  // and an absent one mean the same thing, and two ways of saying it is one way too many.
+  const vendored = [...chosen]
+    .filter(([, { label }]) => label === 'plugins' || label === 'user')
+    .map(([name]) => name)
+    .sort((a, b) => a.localeCompare(b));
+
+  if (vendored.length > 0) {
+    const lines = [];
+    for (const name of vendored) {
+      const entries = await entriesUnder(path.join(targetDir, name));
+      entries.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+      for (const entry of entries) {
+        const rel = path.relative(targetDir, entry.path);
+        if (entry.isDir) {
+          lines.push(`d ${rel}`);
+        } else {
+          const digest = createHash('sha256').update(await fs.readFile(entry.path)).digest('hex');
+          lines.push(`f ${digest} ${rel}`);
+        }
+      }
+    }
+    await fs.writeFile(path.join(targetDir, '.vendored'), `${lines.join('\n')}\n`);
   }
 
   const width = Math.max(0, ...[...chosen.keys()].map((n) => n.length));

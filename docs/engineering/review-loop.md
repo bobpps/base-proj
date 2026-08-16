@@ -179,11 +179,32 @@ file lying if the attempt failed.
 Waiting for a verdict on it could never terminate: every verdict needs recording, and every recording
 would need a verdict.
 
-The exemption covers the round record and the validation file updated with the CI outcome — a reviewer
-has no opinion to offer about either, because they report the past and the past is not up for review.
-It ends where a commit says something new: code, a rule, or a documentation claim that asserts rather
-than records is a change like any other, and the loop continues on the new head even if the diff is
-one line.
+The test is not whether a commit contains new sentences. It is whether it contains anything **a later
+reader is obliged to follow**. A record reports; a rule, a contract, or code instructs. The loop
+exists to keep the second kind from reaching the default branch unreviewed, and it has nothing to
+offer the first.
+
+Three commits are exempt, and the third is the one that needs its reasoning written down:
+
+- **The round record.** It reports what a round did, and the round already happened.
+- **The validation file updated with the CI outcome.** Same: the run finished, this records it.
+- **The retrospective.** It reports how the run went, and it *proposes* edits to files it does not
+  touch. A proposal is not an obligation: nothing in the repository behaves differently because one
+  was written, and every recommendation passes through the `lessons` pass — with a human gate on
+  anything reaching the doctrine — before it becomes a rule anybody follows. That gate is where a
+  proposal is answerable. Reviewing it here reviews a proposal nobody has accepted yet, on a head
+  that phase 11 already converged.
+
+The cost is real and worth stating rather than discovering: **a retrospective's reasoning is never
+seen by the automated reviewer.** It is read by the `lessons` pass and by whoever opens the pull
+request, and that is the whole of its review. The alternative was worse in a way that does not
+converge — a retrospective analyses the review rounds, so it cannot be written before they finish,
+and reviewing it afterwards means fixing it, which changes it, which needs another round.
+
+The exemption ends where a commit says something new that binds: code, a rule, or a documentation
+claim that asserts rather than records is a change like any other, and the loop continues on the new
+head even if the diff is one line. A commit that mixes the two kinds is not exempt — split it, or
+take the round.
 
 Exempt from the reviewer, not from CI. Every push starts a run, including this one, so wait for it on
 the new head before reporting. **That last result is reported, not filed** — writing it into the

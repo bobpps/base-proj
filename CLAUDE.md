@@ -20,20 +20,26 @@ Shared product, architecture, security, and validation instructions live in `AGE
 
 ## Which skill for which request
 
-| Request | Skill | |
+| Request | Skill | Invoked |
 | --- | --- | --- |
-| Set up or re-configure this repository from the template | `init-project` | on disk |
-| Implement a task through to a reviewed pull request | `task-pipeline` | on disk |
-| A finished run needs its retrospective | `retrospective` | **not yet built** |
-| Accumulated retrospectives should improve the skills | `lessons` | **not yet built** |
-| A finished feature needs a human test plan | `qa-architect` | **not yet built** |
-| Documentation may have drifted from the code | `docs-audit` | **not yet built** |
-| A harsh architectural read of recent changes | `code-critic` | **not yet built** |
+| Set up or re-configure this repository from the template | `init-project` | human only |
+| Implement a task through to a reviewed pull request | `task-pipeline` | human, or by request |
+| A finished run needs its retrospective | `retrospective` | by the pipeline at phase 12, or a human |
+| Accumulated retrospectives should improve the skills and the doctrine | `lessons` | human only |
+| A finished feature needs a human test plan | `qa-architect` | human, or by request |
+| Documentation may have drifted from the code | `docs-audit` | human only |
+| A harsh architectural read of recent changes | `code-critic` | human only |
 
-The third column is not decoration. A skill named in this table but absent from disk is worse than
-an absent skill: this table is what the next agent reads to decide what is available, and a missing
-one fails at the moment it is needed rather than at the moment it is looked up. The column goes
-away as the rows become real.
+**This table and the disk must agree.** It is what the next agent reads to decide what is
+available, so a row without a directory fails at the moment it is needed rather than at the moment
+it is looked up — which is exactly what happened while both pipeline editions invoked
+`retrospective` at phase 12 and no such skill existed. `scripts/skills.test.sh` now checks both
+directions, so the failure arrives when the table changes instead of during someone's run.
+
+Four of them never run on their own initiative, and each carries `disable-model-invocation` for a
+different reason: `init-project` rewrites the repository's rule files, `lessons` edits the very
+skills a pipeline would be executing, and `docs-audit` and `code-critic` produce an opinion a human
+asked for rather than work a run needs.
 
 The pipeline is autonomous by default: it takes the task to an open pull request and drives the
 review loop to a verdict. Human gates fire where risk requires them, not on every step. Pass

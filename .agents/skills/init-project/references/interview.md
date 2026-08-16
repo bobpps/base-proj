@@ -155,21 +155,46 @@ One multiple-choice question. Defaults come from the template's own decisions an
 | Contour | Default | What turning it on costs |
 | --- | --- | --- |
 | Codex edition and generated `.agents/` | **on** | every rule expressed twice, in two harness vocabularies |
-| QA package for a human tester | **unavailable** | — see below |
+| QA package for a human tester | **on** | a `qa/` corpus, kept current per finished feature |
 | Cursor rules | **unavailable** | — see below |
 | Vendor plugin and user skills into `.agents/` | off | one machine's installed set committed to the repository, ageing unnoticed |
 
-**Cursor rules cannot be turned on either**, and for the same reason as the QA package: nothing in
-the writing map creates them, and no template exists to create them from. Enabling a contour whose
-only defined operation is deletion asks the agent to invent both the format and the rules — and the
-rules it would invent are this repository's, restated from memory into a third file that then
-drifts from the two that are real. Offer it again when there is something to write.
+**Vendoring is offered only while the Codex contour is on, and forced off with it.** The two answers
+are not independent: turning Codex off deletes `.codex/` and `.agents/`, and vendoring's only
+operation recreates `.agents/skills` and fills it. Accepting both leaves a repository whose prose
+says the Codex contour is gone while its discoverable skill tree is not. Vendoring exists so Codex
+can reach a plugin skill it has no plugin system for — with no Codex contour there is nothing left
+for it to reach.
 
-**The QA package cannot be turned on yet.** The `qa-architect` skill that would produce it is not
-built — `CLAUDE.md` says so per row — and nothing in the writing map creates those documents. An
-offered contour that no operation can honour produces a repository whose skill table names a file
-that is not there, which is the failure that table's third column exists to prevent. Offer it again
-when the skill exists.
+**Cursor rules cannot be turned on.** Nothing in the writing map creates them and no template
+exists to create them from, so enabling a contour whose only defined operation is deletion asks the
+agent to invent both the format and the rules — and the rules it would invent are this
+repository's, restated from memory into a third file that then drifts from the two that are real.
+Offer it again when there is something to write.
+
+**Vendoring is applied by generating the tree, never by copying directories in.** Run
+`node scripts/copy-skills-to-agents.mjs --include-global`, which writes `.agents/skills/.vendored`
+recording what came from outside the repository. Without that record a vendored skill is
+indistinguishable from a directory somebody added by hand, and `scripts/skills.test.sh` reports
+every one of them — leaving a project that chose this contour with a permanently red CI step.
+
+**Turning it off is the same command without the flag**, on a re-run that changes the answer. The
+generator clears `.agents/skills` and rebuilds it, so the vendored copies and the manifest that
+vouched for them both go in one act. Nothing else is needed and nothing else works: deleting the
+directories by hand leaves a manifest still vouching for them, and deleting the manifest by hand
+leaves the copies looking like drift. This is the contour whose off path is least obvious, because
+its on path is a flag rather than a file.
+
+**The QA package is on by default and creates nothing at setup time.** `qa-architect` writes its
+documents when a feature is finished, so what the contour decides is whether the skill stays.
+Turning it off removes more than the one directory a reader expects — `references/writing.md` has
+the operation, and `scripts/skills.test.sh` fails a repository that stops halfway through it.
+
+It has one consequence elsewhere in this interview, and it is easy to miss because it lands in a
+different block: question 1.4 offers the language of human-facing documents as covering the README
+**and the QA package**. The manual test plan's reader is frequently a contractor rather than a
+developer, so where 1.4's answer is not English, `{{DOC_LANGUAGE_EXCEPTIONS}}` names the QA
+documents alongside the README. With the contour off, it names the README alone.
 
 **Two things are not on this list, and both were considered for it.**
 

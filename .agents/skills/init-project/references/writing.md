@@ -81,6 +81,11 @@ the file contradict itself on the day it is generated.
 Name the exception: which documents are in which language, and that the rest stays English. Empty
 is correct only when the answer to 1.4 was English.
 
+The QA package is the second document this covers. `qa-architect` writes a manual test plan for a
+human tester — often a contractor rather than a developer — and reads the language from this row.
+Where the QA contour is on and 1.4's answer is not English, name both the README and the QA
+documents here; with the contour off, name the README alone.
+
 ### The Codex contour, turned off, is more than a deletion
 
 Block 5 can remove the Codex edition and the generated `.agents/`. Deleting those directories and
@@ -91,6 +96,62 @@ pointing every later agent at paths that are not there.
 Rewrite that section to describe what remains. This is the same rule as the skill table — a listing
 must match the disk — and it is easier to miss here because the section is prose rather than a
 table, so nothing about its shape suggests it holds an inventory.
+
+Afterwards `scripts/skills.test.sh` reports its generated-tree comparison as **skipped**, naming the
+absent contour as the reason. That is the correct result and not something to repair: with no
+`.codex/` and no `.agents/`, there is no generated tree to compare. Leave the check in place — the
+project may turn the contour back on, and a deleted check does not come back with it.
+
+**The same paragraph names every supporting skill**, so turning the QA contour off means editing it
+too, not only deleting `.claude/skills/qa-architect/` and its `CLAUDE.md` row. `scripts/skills.test.sh`
+checks the table against the disk; it cannot check a sentence, which is why this is written down.
+
+### Every contour has an off path, and it is not the absence of the on path
+
+Write both directions for each contour, and write the off path in full even when it looks obvious.
+Review found the same gap twice from opposite ends: the QA contour's off path deleted a source
+directory and left the generated copy, and the vendoring contour had no off path written at all
+because its on path is a flag rather than a file — so a re-run that changed the answer left every
+vendored skill in place, with a manifest still vouching for it and the interview reporting success.
+
+The test each off path has to pass: **after it runs, does anything still behave as though the
+contour were on?** A file, a generated copy, a table row, a sentence, a recorded manifest. That
+question is answerable per contour; "we removed the thing" is not.
+
+### Removing a skill means removing every mention of it
+
+State it as one rule rather than per contour, because the next contour that removes a skill will not
+be the QA one:
+
+> A contour that removes a skill removes its source directory, its generated copy under
+> `.agents/skills/`, and **every place the repository names it.**
+
+**Find those places by searching, not from a list.** A list is what fails here, and it fails
+quietly: the first version of this rule named three files, and a review round immediately found a
+fourth — `README.md`, which had gained a paragraph introducing the supporting skills after the rule
+was written. The next document to mention a skill will not update this paragraph either.
+
+```sh
+grep -rn 'qa-architect' --exclude-dir=.git . | grep -v '^\./\.claude/skills/qa-architect/'
+```
+
+Every hit outside the skill's own directory is a place to change, with three recognisable
+exceptions that are left alone rather than edited around:
+
+- `TEMPLATE.md`, which is deleted later in this same run.
+- A record in `docs/decisions/`, which states what was decided at the time and is never rewritten.
+- This skill's own `references/`, which describes how the contour is configured rather than
+  claiming the skill exists. A later `/init-project --block 5` can turn the contour back on, and it
+  needs these instructions to still be here.
+
+The generated copy is the one that gets left behind. `.agents/` exists so Codex can discover skills
+without running anything first, so a copy that survives its source stays discoverable — the feature
+is disabled everywhere a human looks and still live for one harness. `scripts/skills.test.sh`
+reports it as `qa-architect(unexpected)`, which is how this was found.
+
+**Delete that directory outright; do not regenerate the tree to achieve it.** Regeneration needs
+Node, which a project on another stack has no reason to have installed, and it would rewrite every
+other skill as a side effect of removing one.
 
 ### The template notes are deleted, not filled
 

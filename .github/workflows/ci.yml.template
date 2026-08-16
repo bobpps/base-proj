@@ -98,6 +98,13 @@ jobs:
       - name: Placeholder coverage
         run: bash scripts/placeholder-coverage.test.sh
 
+      # The skill table against the disk, both directions, plus the body ceiling, the reachability
+      # of every reference file, and the generated `.agents/` tree against its sources. Each of
+      # those was a rule written in prose that something had already broken; a rule nobody runs is
+      # back where it started, which is why this step is here rather than only in a local suite.
+      - name: Skills
+        run: bash scripts/skills.test.sh
+
       - name: Type correctness
         run: "{{CMD_TYPECHECK}}"
 

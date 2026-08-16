@@ -325,3 +325,15 @@ finished.
 
 Report per phase 12 of `checkpoints.md`, and then invoke the `retrospective` skill. It is
 non-blocking: if it fails, say so in one line and finish anyway.
+
+**Ship what it wrote.** The skill writes `tasks/<task>/retrospective.md` and stops there, because
+committing and pushing are this session's side effects rather than a skill's. Stage that one path,
+commit it, and push — after phase 10 the branch is already published, so a file nobody commits
+lives only in a worktree that is about to be removed, and the pass that later reads these reports
+finds them by path and orders them by commit date. Uncommitted, it is invisible rather than late.
+
+This push does not reopen the review loop — `review-loop.md` names the retrospective among the
+commits its bookkeeping exemption covers, and `docs/decisions/0002` records why. Do not restate the
+criterion here or decide a new case against it; a skill that grants itself an exemption the doctrine
+does not name is how the two editions start demanding different things. Wait for CI on the new head
+and report that result rather than filing it.
