@@ -119,12 +119,16 @@ for tree in .claude/skills .codex/skills; do
   while read -r dir; do
     [ -n "$dir" ] || continue
     [ -d "$dir/references" ] || continue
-    for ref in "$dir"/references/*; do
-      [ -f "$ref" ] || continue
+    # Any depth. A glob over `references/*` sees a nested directory and skips it for not being a
+    # file, so every reference filed under one passed unexamined while the check reported that all
+    # of them were reachable. Same shape as the shallow walk in the generated-tree comparison: an
+    # enumeration narrower than the property it claims.
+    while IFS= read -r ref; do
+      [ -n "$ref" ] || continue
       refs_checked=$((refs_checked + 1))
       # Named anywhere in the body — `references/x.md` or a bare `x.md` both count as a pointer.
       grep -qF "$(basename "$ref")" "$dir/SKILL.md" || unmentioned="$unmentioned ${ref#"$ROOT"/}"
-    done
+    done <<< "$(find "$dir/references" ! -type d | LC_ALL=C sort)"
   done <<< "$(skill_dirs "$tree")"
 done
 

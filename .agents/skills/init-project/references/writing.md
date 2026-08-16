@@ -106,6 +106,18 @@ project may turn the contour back on, and a deleted check does not come back wit
 too, not only deleting `.claude/skills/qa-architect/` and its `CLAUDE.md` row. `scripts/skills.test.sh`
 checks the table against the disk; it cannot check a sentence, which is why this is written down.
 
+### Every contour has an off path, and it is not the absence of the on path
+
+Write both directions for each contour, and write the off path in full even when it looks obvious.
+Review found the same gap twice from opposite ends: the QA contour's off path deleted a source
+directory and left the generated copy, and the vendoring contour had no off path written at all
+because its on path is a flag rather than a file — so a re-run that changed the answer left every
+vendored skill in place, with a manifest still vouching for it and the interview reporting success.
+
+The test each off path has to pass: **after it runs, does anything still behave as though the
+contour were on?** A file, a generated copy, a table row, a sentence, a recorded manifest. That
+question is answerable per contour; "we removed the thing" is not.
+
 ### Removing a skill means removing every mention of it
 
 State it as one rule rather than per contour, because the next contour that removes a skill will not

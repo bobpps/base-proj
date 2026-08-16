@@ -159,6 +159,13 @@ One multiple-choice question. Defaults come from the template's own decisions an
 | Cursor rules | **unavailable** | — see below |
 | Vendor plugin and user skills into `.agents/` | off | one machine's installed set committed to the repository, ageing unnoticed |
 
+**Vendoring is offered only while the Codex contour is on, and forced off with it.** The two answers
+are not independent: turning Codex off deletes `.codex/` and `.agents/`, and vendoring's only
+operation recreates `.agents/skills` and fills it. Accepting both leaves a repository whose prose
+says the Codex contour is gone while its discoverable skill tree is not. Vendoring exists so Codex
+can reach a plugin skill it has no plugin system for — with no Codex contour there is nothing left
+for it to reach.
+
 **Cursor rules cannot be turned on.** Nothing in the writing map creates them and no template
 exists to create them from, so enabling a contour whose only defined operation is deletion asks the
 agent to invent both the format and the rules — and the rules it would invent are this
@@ -170,6 +177,13 @@ Offer it again when there is something to write.
 recording what came from outside the repository. Without that record a vendored skill is
 indistinguishable from a directory somebody added by hand, and `scripts/skills.test.sh` reports
 every one of them — leaving a project that chose this contour with a permanently red CI step.
+
+**Turning it off is the same command without the flag**, on a re-run that changes the answer. The
+generator clears `.agents/skills` and rebuilds it, so the vendored copies and the manifest that
+vouched for them both go in one act. Nothing else is needed and nothing else works: deleting the
+directories by hand leaves a manifest still vouching for them, and deleting the manifest by hand
+leaves the copies looking like drift. This is the contour whose off path is least obvious, because
+its on path is a flag rather than a file.
 
 **The QA package is on by default and creates nothing at setup time.** `qa-architect` writes its
 documents when a feature is finished, so what the contour decides is whether the skill stays.
