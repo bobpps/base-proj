@@ -294,6 +294,15 @@ if [ -f "$VENDOR_MARKER" ]; then
   done
 fi
 
+# No link anywhere in the generated tree, at any depth, for any skill. The generator dereferences
+# while copying, so every entry it writes is a real file or a real directory — which makes a link
+# drift wherever it appears. Stated once and checked over the whole tree, because the narrow version
+# was wrong twice: a link was rejected inside a vendored skill and accepted everywhere else, and
+# `-d` plus `diff -rq` both follow a link and agree that a symlinked skill directory is fine.
+links="$(find "$ROOT/.agents/skills" -type l 2>/dev/null \
+         | sed "s|^$ROOT/\.agents/skills/||" | LC_ALL=C sort | tr '\n' ' ')"
+[ -z "${links// /}" ] || drift="$drift (links, where the generator writes real entries: ${links% })"
+
 for tree in .codex/skills .claude/skills; do
   while read -r dir; do
     [ -n "$dir" ] || continue
