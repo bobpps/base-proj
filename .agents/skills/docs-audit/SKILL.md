@@ -61,11 +61,35 @@ Everything else is in scope, `AGENTS.md` and `README.md` included. `AGENTS.md` i
 carries the proving commands, the branch conventions, and the worktree root — all of them
 verifiable, and all of them load-bearing for every future run.
 
-**A generated path given as a target is redirected, not refused.** When the human passes something
-under `.agents/skills/<name>/`, the stale claim is real and lives in the source — `.codex/skills/<name>/`
-where that exists, otherwise `.claude/skills/<name>/`. Audit and repair the source, say in the
-report that the target was redirected and to where, then propagate as `writing-skills.md` requires:
-copy that one skill's directory across by hand rather than regenerating the whole tree.
+**A generated path given as a target is redirected, not refused.** The stale claim is real; it just
+lives in the source. Audit and repair the source, say in the report that the target was redirected
+and to where, then propagate as `writing-skills.md` requires: copy that one skill's directory across
+by hand rather than regenerating the whole tree.
+
+**Find the source by comparing, not by guessing which one it should be.** The generated copy is
+byte-identical to whichever source the generator selected, so the copy answers the question
+directly:
+
+```sh
+for src in .codex/skills/<name> .claude/skills/<name>; do
+  [ -d "$src" ] && diff -rq "$src" ".agents/skills/<name>" >/dev/null && echo "$src"
+done
+```
+
+Do not reason it out from directory existence. The generator prefers `.codex`, skips a skill whose
+frontmatter carries `superseded-by:`, and skips anything in its `IGNORE` map — so a retired `.codex`
+edition sitting beside a live `.claude` one exists and is *not* the source, and copying the audit's
+repair back from there would replace the active edition with the retired one and turn the drift
+check red. Every restatement of those rules in a second file has diverged from the generator the
+moment somebody used one of them; the comparison above cannot.
+
+Two answers are not a redirect and are reported as they are:
+
+- **No source matches** — the generated tree is already stale. Say so and stop; regenerating it is
+  a separate act with its own reasons, and auditing a copy nobody has reconciled repairs the wrong
+  text.
+- **The name appears in `.agents/skills/.vendored`** — it came from outside this repository
+  entirely, so there is no source here to repair. Name the stale claim in the report and leave it.
 
 That propagation is not optional bookkeeping. `scripts/skills.test.sh` compares the generated tree
 against its sources, so a repaired skill whose copy was left behind turns a green audit into a red
