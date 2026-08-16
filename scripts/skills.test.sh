@@ -230,14 +230,47 @@ expected=""
 # Reading the record rather than the source is deliberate. The sources are one machine's home
 # directory; CI has no such home, so a check that looked there would report every vendored skill
 # absent instead — failing in the opposite direction and in the place that matters more.
+#
+# The manifest records contents, not names, and the difference is the whole of its value. A name
+# proves the directory is still there; the vendored copy is committed like any other file, so a hand
+# edit inside it is exactly as likely as one anywhere else. Recording names alone would have fixed
+# round 5's false positive by opening a blind spot, which round 6 duly found.
 VENDOR_MARKER="$ROOT/.agents/skills/.vendored"
 vendored=""
 if [ -f "$VENDOR_MARKER" ]; then
-  while IFS= read -r name || [ -n "$name" ]; do
-    case "$name" in ''|'#'*) continue ;; esac
-    vendored="$vendored $name"
-    [ -d "$ROOT/.agents/skills/$name" ] || drift="$drift $name(vendored, absent)"
-  done < "$VENDOR_MARKER"
+  vendored="$(sed 's/^[0-9a-f]*  //' "$VENDOR_MARKER" | cut -d/ -f1 | LC_ALL=C sort -u | tr '\n' ' ')"
+
+  # sha256 of a file's bytes is the same number whoever computes it, so this is a shared standard
+  # rather than a reimplementation of the generator. Prefer coreutils, accept the BSD spelling, and
+  # say plainly when neither is here — a content check nobody ran must not read as one that passed.
+  if command -v sha256sum >/dev/null 2>&1; then VERIFY="sha256sum -c"
+  elif command -v shasum >/dev/null 2>&1;   then VERIFY="shasum -a 256 -c"
+  else VERIFY=""
+  fi
+
+  if [ -n "$VERIFY" ]; then
+    # Results go to stdout as `<path>: OK` or `<path>: FAILED`; the summary warning goes to stderr
+    # and is noise here, because every path it summarises is already on stdout.
+    bad="$( (cd "$ROOT/.agents/skills" && $VERIFY .vendored 2>/dev/null) \
+            | grep -v ': OK$' | sed 's/: FAILED.*//' | LC_ALL=C sort -u | tr '\n' ' ' )"
+    [ -z "${bad// /}" ] || drift="$drift (vendored, content differs: ${bad% })"
+  else
+    skip "vendored skill contents match the manifest" \
+         "neither sha256sum nor shasum is installed, so the manifest could not be verified"
+  fi
+
+  # The manifest lists what belongs; a file added inside a vendored skill is listed nowhere, so the
+  # verification above cannot see it. Compare the file sets in the other direction too.
+  listed="$(sed 's/^[0-9a-f]*  //' "$VENDOR_MARKER" | LC_ALL=C sort)"
+  for name in $vendored; do
+    if [ ! -d "$ROOT/.agents/skills/$name" ]; then
+      drift="$drift $name(vendored, absent)"
+      continue
+    fi
+    present="$(cd "$ROOT/.agents/skills" && find "$name" -type f | LC_ALL=C sort)"
+    extra="$(comm -13 <(printf '%s\n' "$listed") <(printf '%s\n' "$present") | tr '\n' ' ')"
+    [ -z "${extra// /}" ] || drift="$drift $name(vendored, unlisted files: ${extra% })"
+  done
 fi
 
 for tree in .codex/skills .claude/skills; do

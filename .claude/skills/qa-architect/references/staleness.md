@@ -44,9 +44,21 @@ One bounded hop closes most of it. For each changed file, find what depends on i
 
 ```bash
 # whatever the project's import syntax is — the module name is the searchable part
-grep -rl "<module-or-symbol-name>" <worktree>/src | sort -u > /tmp/qa-dependents.txt
+git -C <worktree> grep -l "<module-or-symbol-name>" \
+  | grep -v '^$' | LC_ALL=C sort -u > /tmp/qa-dependents.txt
 grep -rl -F -f /tmp/qa-dependents.txt <worktree>/qa --include=manual.md
 ```
+
+**`git grep -l`, not `grep -rl <worktree>/src`.** A `Code:` line holds repository-relative paths —
+`manual-plan.md` requires it — so every path fed to the fixed-string search has to be relative too.
+A plain recursive grep over the worktree emits `/abs/path/to/worktree/src/foo.ts`, no annotation
+contains that string, the search returns nothing, and step 2 reports a clean corpus having matched
+against a prefix. Step 1 works for the same reason without anyone noticing: `git diff --name-only`
+is repository-relative already.
+
+Strip blank lines while you are there. A single empty line in a `-F -f` pattern file matches every
+line of every document, which fails in the opposite direction — every case becomes a candidate and
+the pass stops discriminating.
 
 One hop, not the transitive closure. Two hops out, everything depends on everything and the pass
 stops discriminating — which is the same as not running it, at much greater cost.

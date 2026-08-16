@@ -23,11 +23,18 @@
  * noticing. Turn it on when a Codex run genuinely needs those skills, record the
  * decision, and re-run deliberately rather than on a schedule.
  *
- * When anything is vendored, the names are recorded in `.agents/skills/.vendored`, one
- * per line. Nothing here reads that file — it exists so `scripts/skills.test.sh` can tell
- * a deliberately vendored skill from a directory somebody added by hand, which are
- * otherwise the same thing: a skill in the generated tree with no source in this
- * repository. It is written inside the directory this script clears and rebuilds, so it
+ * When anything is vendored, `.agents/skills/.vendored` records it as a `sha256sum`-format
+ * manifest: one `<hex>  <path>` line per file, paths relative to `.agents/skills/`.
+ * Nothing here reads that file — it exists so `scripts/skills.test.sh` can tell a
+ * deliberately vendored skill from a directory somebody added by hand, which are otherwise
+ * the same thing: a skill in the generated tree with no source in this repository.
+ *
+ * It records contents rather than names because a name alone only proves the directory is
+ * still there. The vendored copy is committed and lives in the repository like any other
+ * file, so a hand edit inside it is exactly as likely as one anywhere else, and a check
+ * that accepted the directory by name would be blind to it.
+ *
+ * The manifest is written inside the directory this script clears and rebuilds, so it
  * cannot outlive the tree it describes.
  *
  * Two kinds of skill are skipped rather than copied:
@@ -41,6 +48,7 @@
  * deletes committed skills that exist upstream. Copy the one directory by hand.
  */
 
+import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -115,6 +123,22 @@ async function isSuperseded(skillDir) {
   return /^superseded-by:\s*\S/m.test(match[1]);
 }
 
+/**
+ * Every file under `dir`, at any depth, as absolute paths.
+ *
+ * @param {string} dir
+ * @returns {Promise<string[]>}
+ */
+async function filesUnder(dir) {
+  const out = [];
+  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...(await filesUnder(full)));
+    else if (entry.isFile()) out.push(full);
+  }
+  return out;
+}
+
 async function main() {
   const includeGlobal = process.argv.includes('--include-global');
 
@@ -161,7 +185,7 @@ async function main() {
   }
 
   // Record what came from outside the repository, so the drift check can tell a vendored skill
-  // from a hand-added directory. Written only when there is something to record: an empty marker
+  // from a hand-added directory. Written only when there is something to record: an empty manifest
   // and an absent one mean the same thing, and two ways of saying it is one way too many.
   const vendored = [...chosen]
     .filter(([, { label }]) => label === 'plugins' || label === 'user')
@@ -169,7 +193,14 @@ async function main() {
     .sort((a, b) => a.localeCompare(b));
 
   if (vendored.length > 0) {
-    await fs.writeFile(path.join(targetDir, '.vendored'), `${vendored.join('\n')}\n`);
+    const lines = [];
+    for (const name of vendored) {
+      for (const file of (await filesUnder(path.join(targetDir, name))).sort()) {
+        const digest = createHash('sha256').update(await fs.readFile(file)).digest('hex');
+        lines.push(`${digest}  ${path.relative(targetDir, file)}`);
+      }
+    }
+    await fs.writeFile(path.join(targetDir, '.vendored'), `${lines.join('\n')}\n`);
   }
 
   const width = Math.max(0, ...[...chosen.keys()].map((n) => n.length));

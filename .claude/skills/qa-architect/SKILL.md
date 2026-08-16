@@ -90,13 +90,30 @@ git -C <worktree> diff <base>...HEAD
 ```
 
 **An empty diff does not mean nothing happened.** It usually means the task is already merged and
-this skill was invoked after the fact. Recover the change from history — find the merge for the
-task's branch and diff that — rather than concluding there is nothing to test. The two situations
-look identical from `<base>...HEAD` and they mean opposite things.
+this skill was invoked after the fact. The two situations look identical from `<base>...HEAD` and
+they mean opposite things, so recover the change rather than concluding there is nothing to test.
+
+**Ask the platform first.** `AGENTS.md` names it and the command that talks to it, and a pull
+request records the commits it merged whatever strategy was used to land them. That answer is
+authoritative; everything below is what to do when the platform cannot be reached.
+
+From history alone, the shape depends on how the branch landed, and one recovery does not fit all
+three:
+
+| Landed as | What to look for | What to diff |
+| --- | --- | --- |
+| a merge commit | a merge whose second parent is the task branch | `<merge>^1...<merge>` |
+| a squash commit | one ordinary commit on the base branch carrying the task id | `<commit>^..<commit>` |
+| a rebase | a run of ordinary commits, with nothing marking where it starts | the range, once its ends are identified |
+
+**A squash or a rebase leaves no merge commit at all**, so a recovery that insists on finding one
+concludes there is nothing to test for two of the three common strategies. Say which shape you
+found; where none of them can be identified, ask rather than writing a document about nothing.
 
 Searching history by task id matches commit bodies too, so a neighbouring task that merely mentions
-yours comes back as a hit. Confirm the merge you picked actually merges this task's branch before
-diffing it, or the test plan will describe someone else's feature.
+yours comes back as a hit. Validate what you found before diffing it — a merge by its second
+parent's branch name, a squash by its own subject naming this task and its diff touching what the
+task described — or the test plan will describe someone else's feature.
 
 **Where later work has landed on top, describe what the base branch does now**, not what the diff
 did. The tester will exercise today's product; a document faithful to a three-week-old diff sends
