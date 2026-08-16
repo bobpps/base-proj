@@ -56,12 +56,14 @@ is_superseded() {
 }
 
 skill_dirs() {
-  # Every directory directly containing a SKILL.md, under the source trees this repository owns.
-  local base
-  for base in "$1"; do
-    [ -d "$ROOT/$base" ] || continue
-    find "$ROOT/$base" -mindepth 1 -maxdepth 2 -name SKILL.md -printf '%h\n' | LC_ALL=C sort
-  done
+  # Every directory containing a SKILL.md, at any depth, pruning what the generator prunes. The
+  # depth and the prune list are copied from `findSkillDirs` in copy-skills-to-agents.mjs on
+  # purpose: a shallower walk here would call a skill the generator copies one this test never saw.
+  local base="$1"
+  [ -d "$ROOT/$base" ] || return 0
+  find "$ROOT/$base" \
+       -type d \( -name node_modules -o -name .git -o -name dist -o -name build -o -name coverage \) -prune \
+       -o -type f -name SKILL.md -printf '%h\n' | LC_ALL=C sort
 }
 
 echo "skills"
@@ -234,11 +236,19 @@ for tree in .codex/skills .claude/skills; do
   done <<< "$(skill_dirs "$tree")"
 done
 
-while read -r dir; do
-  [ -n "$dir" ] || continue
-  name="$(basename "$dir")"
-  case " $expected " in *" $name "*) ;; *) drift="$drift $name(unexpected)" ;; esac
-done <<< "$(skill_dirs .agents/skills)"
+# Every entry in the generated root, not every skill in it. The generator clears the whole directory
+# and rebuilds it, so anything that is not one of the expected skill directories is drift — and a
+# scan that looked only for directories holding a SKILL.md could not see it. A stray file added
+# under `.agents/skills/` passed this check until round 4 of the review said so.
+while IFS= read -r entry; do
+  [ -n "$entry" ] || continue
+  name="$(basename "$entry")"
+  if [ ! -d "$entry" ]; then
+    drift="$drift $name(stray file)"
+  else
+    case " $expected " in *" $name "*) ;; *) drift="$drift $name(unexpected)" ;; esac
+  fi
+done <<< "$(find "$ROOT/.agents/skills" -mindepth 1 -maxdepth 1 2>/dev/null | LC_ALL=C sort)"
 
 if [ -z "$drift" ]; then
   pass ".agents/skills matches what the generator would write"
