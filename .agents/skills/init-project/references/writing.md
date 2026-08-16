@@ -106,13 +106,31 @@ project may turn the contour back on, and a deleted check does not come back wit
 too, not only deleting `.claude/skills/qa-architect/` and its `CLAUDE.md` row. `scripts/skills.test.sh`
 checks the table against the disk; it cannot check a sentence, which is why this is written down.
 
-### Removing a skill means removing every copy of it
+### Removing a skill means removing every mention of it
 
 State it as one rule rather than per contour, because the next contour that removes a skill will not
 be the QA one:
 
-> A contour that removes a skill removes **its source directory, its generated copy under
-> `.agents/skills/`, its row in `CLAUDE.md`, and its name from the `AGENTS.md` paragraph.**
+> A contour that removes a skill removes its source directory, its generated copy under
+> `.agents/skills/`, and **every place the repository names it.**
+
+**Find those places by searching, not from a list.** A list is what fails here, and it fails
+quietly: the first version of this rule named three files, and a review round immediately found a
+fourth — `README.md`, which had gained a paragraph introducing the supporting skills after the rule
+was written. The next document to mention a skill will not update this paragraph either.
+
+```sh
+grep -rn 'qa-architect' --exclude-dir=.git . | grep -v '^\./\.claude/skills/qa-architect/'
+```
+
+Every hit outside the skill's own directory is a place to change, with three recognisable
+exceptions that are left alone rather than edited around:
+
+- `TEMPLATE.md`, which is deleted later in this same run.
+- A record in `docs/decisions/`, which states what was decided at the time and is never rewritten.
+- This skill's own `references/`, which describes how the contour is configured rather than
+  claiming the skill exists. A later `/init-project --block 5` can turn the contour back on, and it
+  needs these instructions to still be here.
 
 The generated copy is the one that gets left behind. `.agents/` exists so Codex can discover skills
 without running anything first, so a copy that survives its source stays discoverable — the feature

@@ -259,18 +259,33 @@ if [ -f "$VENDOR_MARKER" ]; then
          "neither sha256sum nor shasum is installed, so the manifest could not be verified"
   fi
 
-  # The manifest lists what belongs; a file added inside a vendored skill is listed nowhere, so the
-  # verification above cannot see it. Compare the file sets in the other direction too.
+  # The manifest lists what belongs; anything added inside a vendored skill is listed nowhere, so
+  # the verification above cannot see it. Compare the sets in the other direction too.
+  #
+  # `! -type d` rather than `-type f`, so a symlink counts as an entry. The generator dereferences
+  # while copying, which means every entry it writes is a regular file — so a symlink appearing here
+  # is drift by definition. Looking only for regular files missed it twice over: the manifest never
+  # listed it and the reverse comparison never saw it.
   listed="$(sed 's/^[0-9a-f]*  //' "$VENDOR_MARKER" | LC_ALL=C sort)"
   for name in $vendored; do
     if [ ! -d "$ROOT/.agents/skills/$name" ]; then
       drift="$drift $name(vendored, absent)"
       continue
     fi
-    present="$(cd "$ROOT/.agents/skills" && find "$name" -type f | LC_ALL=C sort)"
+    present="$(cd "$ROOT/.agents/skills" && find "$name" ! -type d | LC_ALL=C sort)"
     extra="$(comm -13 <(printf '%s\n' "$listed") <(printf '%s\n' "$present") | tr '\n' ' ')"
-    [ -z "${extra// /}" ] || drift="$drift $name(vendored, unlisted files: ${extra% })"
+    [ -z "${extra// /}" ] || drift="$drift $name(vendored, unlisted entries: ${extra% })"
   done
+
+  # A listed path that is no longer a regular file passes the content check whenever the link points
+  # at identical bytes, so the type is checked on its own. Content and type are two claims.
+  while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    [ -e "$ROOT/.agents/skills/$p" ] || continue     # absence is already reported above
+    if [ -L "$ROOT/.agents/skills/$p" ] || [ ! -f "$ROOT/.agents/skills/$p" ]; then
+      drift="$drift $p(vendored, not a regular file)"
+    fi
+  done <<< "$listed"
 fi
 
 for tree in .codex/skills .claude/skills; do

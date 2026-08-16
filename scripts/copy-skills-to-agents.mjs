@@ -181,7 +181,11 @@ async function main() {
   await fs.mkdir(targetDir, { recursive: true });
 
   for (const [name, { from }] of [...chosen].sort(([a], [b]) => a.localeCompare(b))) {
-    await fs.cp(from, path.join(targetDir, name), { recursive: true });
+    // `dereference` because this tree is committed. Copied as links, symlinks are rewritten to the
+    // absolute path of the machine that ran this — observed pointing into a home directory that
+    // exists nowhere else — so the copy is broken for every other checkout the moment it lands. A
+    // vendored skill has to stand alone, and standing alone means real files.
+    await fs.cp(from, path.join(targetDir, name), { recursive: true, dereference: true });
   }
 
   // Record what came from outside the repository, so the drift check can tell a vendored skill
