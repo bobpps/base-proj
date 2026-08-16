@@ -42,18 +42,19 @@ When it is genuinely unclear which side is authoritative, that ambiguity is the 
 a rotted list is worse than no list because it reads as complete:
 
 ```bash
-git ls-files '*.md' | grep -v '^docs/engineering/\|^docs/decisions/\|^tasks/\|^\.agents/'
+git ls-files '*.md' | grep -v '^docs/engineering/\|^docs/decisions/\|^docs/specs/\|^tasks/\|^\.agents/'
 ```
 
 Then narrow by what the human asked for, and by what `AGENTS.md`'s **Documentation** section says
 each file is for — a file's purpose decides which of its claims are even checkable.
 
-Four paths are deliberately out of scope, each for a different reason:
+Five paths are deliberately out of scope, each for a different reason:
 
 | Excluded | Why |
 | --- | --- |
 | `docs/engineering/` | Doctrine. It describes how work is proved, not what this repository contains — there is nothing in it for the code to drift from, and it changes through the retrospective loop rather than through an audit. |
 | `docs/decisions/` | Historical records. A record describing a decision that has since been reversed is **correct**: it says what was decided then. The repair for a changed decision is a new record superseding it, not an edit to the old one. |
+| `docs/specs/` | Dated specifications, historical in the same way a decision record is: a spec states what was specified on its date, so one the implementation has moved past is correct, not stale. It is superseded by a newer spec, never edited to match today's code. |
 | `tasks/` | Run artifacts. Each was true at its checkpoint, and `evidence.md` depends on that staying so. |
 | `.agents/` | Generated. Editing it produces one of two outcomes and neither is a repair: the drift check fails, or the next regeneration silently reverts the fix. |
 
@@ -190,8 +191,9 @@ so a run can be compared with the one before it.
 
 ## Boundaries
 
-Never edits code, only documentation. Never edits `docs/engineering/`, `docs/decisions/`, `tasks/`,
-or anything under `.agents/` — a repair there is either reverted by the next regeneration or shows
-up as drift. Never applies a migration, runs a mutation, or writes to any external system — every
+Never edits code, only documentation. Never edits `docs/engineering/`, `docs/decisions/`,
+`docs/specs/`, `tasks/`, or anything under `.agents/` — a repair in the generated tree is either
+reverted by the next regeneration or shows up as drift, and a repair in the other four rewrites a
+record of what was true at its date. Never applies a migration, runs a mutation, or writes to any external system — every
 authority here is read. Never commits or pushes. Never resolves a rule-versus-code mismatch on the
 human's behalf.

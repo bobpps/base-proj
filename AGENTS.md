@@ -162,6 +162,9 @@ history.
   answers a gate question before it is asked, and it is what a reviewer finding gets rejected
   against.
 - `docs/engineering/` is the doctrine. It changes through the retrospective loop, not casually.
+- `docs/specs/` holds dated specifications, and they are **historical like a decision record**: a
+  spec says what was specified on its date, so a spec the implementation has since moved past is
+  correct rather than stale. Supersede it with a newer one; never edit it to match today's code.
 
 ## Skills
 
